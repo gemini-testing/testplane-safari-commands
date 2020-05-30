@@ -12,3 +12,59 @@ You can read more about hermione plugins [here](https://github.com/gemini-testin
 ```bash
 npm install hermione-safari-commands
 ```
+
+## Usage
+
+Plugin has following configuration:
+
+* **enabled** (optional) `Boolean` – enable/disable the plugin, by default plugin is enabled;
+* **browsers** (required) `Object` - the list of browsers to use for wrap commands;
+  * **commands** (required) `Array` - commands which will be wrapped.
+
+Also there is ability to override plugin parameters by CLI options or environment variables
+(see [configparser](https://github.com/gemini-testing/configparser)).
+Use `hermione_safari_commands_` prefix for the environment variables and `--hermione-safari-commands-` for the cli options.
+
+Add plugin to your `hermione` config file:
+
+```js
+module.exports = {
+    // ...
+    system: {
+        plugins: {
+            'hermione-safari-commands': {
+                enabled: true,
+                browsers: {
+                    safari13: {
+                        commands: [
+                            'swipe',
+                            'touch',
+                            'dragAndDrop'
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    //...
+}
+```
+
+### Existing safari commands:
+
+Wrappers over existing commands:
+* **swipe** - replaces wdio "swipe" in order to perform swipe by coordinates in native context;
+* **touch** - replaces wdio "touch" in order to perform touch click by coordinates in native context;
+* **dragAndDrop** - replaces wdio "dragAndDrop" in order to perform drag and drop elements by coordinates in native context.
+
+## Testing
+
+Run [mocha](http://mochajs.org) tests:
+```bash
+npm run test-unit
+```
+
+Run [eslint](http://eslint.org) codestyle verification
+```bash
+npm run lint
+```
