@@ -38,6 +38,8 @@ module.exports = {
                     safari13: {
                         commands: [
                             'url',
+                            'screenshot',
+                            'orientation',
                             'swipe',
                             'touch',
                             'dragAndDrop'
@@ -55,6 +57,8 @@ module.exports = {
 
 Wrappers over existing commands:
 * **url** - wrapper over wdio "url" in order to wait until the page is completely open (used timeout from [`hermione.pageLoadTimeout`](https://github.com/gemini-testing/hermione#pageloadtimeout) or `30000` ms). In [appium-xcuitest-driver](https://github.com/appium/appium-xcuitest-driver) page is open with using the `xcrun` utility - `xcrun simctl openurl` which just tells the simulator to open the page and does not wait anything;
+* **screenshot** - wrapper of wdio "screenshot" in order to cut the native elements from the final image ([calibration](https://github.com/gemini-testing/hermione#calibrate) must be turned off);
+* **orientation** - wrapper of wdio "orientation" in order to recalculate size of native elements for "screenshot" command (turns on automatically when you specify a screenshot command);
 * **swipe** - replaces wdio "swipe" in order to perform swipe by coordinates in native context;
 * **touch** - replaces wdio "touch" in order to perform touch click by coordinates in native context;
 * **dragAndDrop** - replaces wdio "dragAndDrop" in order to perform drag and drop elements by coordinates in native context.
