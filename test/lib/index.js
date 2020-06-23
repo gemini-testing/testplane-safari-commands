@@ -106,11 +106,78 @@ describe('plugin', () => {
 
                 hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
 
-                assert.calledOnceWith(
-                    commands.swipe,
-                    browser,
-                    browserConfig
-                );
+                assert.calledOnceWith(commands.swipe, browser, browserConfig);
+            });
+
+            describe('"orientation" command is not specified in config', () => {
+                it('should not wrap "orientation" if "screenshot" command is not specified', () => {
+                    const browser = mkBrowser_();
+                    const hermione = mkHermione_({
+                        proc: 'worker',
+                        browsers: {
+                            b1: {}
+                        }
+                    });
+
+                    plugin(hermione, mkConfig_({
+                        browsers: {
+                            b1: {
+                                commands: ['swipe']
+                            }
+                        }
+                    }));
+
+                    hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
+
+                    assert.notCalled(commands.orientation);
+                });
+
+                it('should wrap "orientation" if "screenshot" command is specified', () => {
+                    const browser = mkBrowser_();
+                    const browserConfig = {foo: 'bar'};
+                    const hermione = mkHermione_({
+                        proc: 'worker',
+                        browsers: {
+                            b1: browserConfig
+                        }
+                    });
+
+                    plugin(hermione, mkConfig_({
+                        browsers: {
+                            b1: {
+                                commands: ['screenshot']
+                            }
+                        }
+                    }));
+
+                    hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
+
+                    assert.calledOnceWith(commands.orientation, browser, browserConfig);
+                });
+            });
+
+            describe('"orientation" command is specified in config', () => {
+                it('should not wrap "orientation" again even if "screenshot" command is specified', () => {
+                    const browser = mkBrowser_();
+                    const hermione = mkHermione_({
+                        proc: 'worker',
+                        browsers: {
+                            b1: {}
+                        }
+                    });
+
+                    plugin(hermione, mkConfig_({
+                        browsers: {
+                            b1: {
+                                commands: ['orientation', 'screenshot']
+                            }
+                        }
+                    }));
+
+                    hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
+
+                    assert.calledOnce(commands.orientation);
+                });
             });
         });
     });

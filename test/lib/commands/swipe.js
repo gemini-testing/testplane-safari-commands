@@ -3,17 +3,18 @@
 const proxyquire = require('proxyquire');
 const {mkBrowser_, matchElemArrayByIndex_} = require('../../utils');
 const {WAIT_BETWEEN_ACTIONS_IN_MS} = require('lib/constants');
+const {TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION} = require('lib/command-helpers/test-context');
 
 describe('"swipe" command', () => {
-    let browser, addSwipeCommand, getTestContext, getElemCenterLocation;
+    let browser, addSwipeCommand, resetTestContextValues, getElemCenterLocation;
 
     beforeEach(() => {
         browser = mkBrowser_();
-        getTestContext = sinon.stub().returns({});
+        resetTestContextValues = sinon.stub();
         getElemCenterLocation = sinon.stub().resolves({x: 0, y: 0});
 
         addSwipeCommand = proxyquire('lib/commands/swipe', {
-            '../command-helpers/test-context': {getTestContext},
+            '../command-helpers/test-context': {resetTestContextValues},
             '../command-helpers/element-utils': {getElemCenterLocation}
         });
     });
@@ -132,25 +133,19 @@ describe('"swipe" command', () => {
         });
     });
 
-    describe('should set "isVerticalSwipePerformed" in test context to', () => {
-        it('"true" if "yOffset" is passed', async () => {
-            const testCtx = {};
-            getTestContext.returns(testCtx);
-            addSwipeCommand(browser);
+    it('should reset toolbar values in test context if "yOffset" is passed', async () => {
+        addSwipeCommand(browser);
 
-            await browser.swipe('.some-selector', 0, 100);
+        await browser.swipe('.some-selector', 0, 100);
 
-            assert.isTrue(testCtx.isVerticalSwipePerformed);
-        });
+        assert.calledOnceWith(resetTestContextValues, browser.executionContext, [TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION]);
+    });
 
-        it('"false" if "yOffset" is not passed', async () => {
-            const testCtx = {};
-            getTestContext.returns(testCtx);
-            addSwipeCommand(browser);
+    it('should not reset toolbar values in test context if "yOffset" is not passed', async () => {
+        addSwipeCommand(browser);
 
-            await browser.swipe('.some-selector');
+        await browser.swipe('.some-selector');
 
-            assert.isFalse(testCtx.isVerticalSwipePerformed);
-        });
+        assert.notCalled(resetTestContextValues);
     });
 });
