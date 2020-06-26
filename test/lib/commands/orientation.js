@@ -46,11 +46,22 @@ describe('"orientation" command', () => {
         );
     });
 
-    it('should not reset toolbar and web view values in test context if "orientation" is not passed', async () => {
-        addOrientationCommand(browser);
+    describe('should not reset toolbar and web view values in test context if', () => {
+        it('"orientation" is not passed', async () => {
+            addOrientationCommand(browser);
 
-        await browser.orientation();
+            await browser.orientation();
 
-        assert.notCalled(resetTestContextValues);
+            assert.notCalled(resetTestContextValues);
+        });
+
+        it('"browser.executionContext" is not inited yet', async () => {
+            browser.executionContext = undefined;
+            addOrientationCommand(browser);
+
+            await browser.orientation('landscape');
+
+            assert.notCalled(resetTestContextValues);
+        });
     });
 });
