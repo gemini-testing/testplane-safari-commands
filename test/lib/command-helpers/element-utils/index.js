@@ -130,6 +130,19 @@ describe('"element-utils" helper', () => {
             assert.deepEqual(coords, {width: 10, height: 20, x: 1, y: 2});
         });
 
+        it('should return coords of first found element', async () => {
+            browser.getElementSize.withArgs('some-selector').returns(
+                [{width: 10, height: 20}, {width: 100, height: 200}]
+            );
+            browser.getLocation.withArgs('some-selector').returns(
+                [{x: 1, y: 2}, {x: 11, y: 22}]
+            );
+
+            const coords = await utils.getElemCoords(browser, 'some-selector');
+
+            assert.deepEqual(coords, {width: 10, height: 20, x: 1, y: 2});
+        });
+
         it('should increase y coordinate on top toolbar height', async () => {
             utils.getTopToolbarHeight.returns(10);
             browser.getLocation.withArgs('some-selector').returns({x: 1, y: 2});
