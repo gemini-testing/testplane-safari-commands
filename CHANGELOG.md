@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.1...v0.3.2) (2020-09-21)
+
+
+### Bug Fixes
+
+* bug with unable to tap on first found element ([7a0440a](https://github.com/gemini-testing/hermione-safari-commands/commit/7a0440aa86e729b533d96a0c52374c0505649135))
+
 ### [0.3.1](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.0...v0.3.1) (2020-06-26)
 
 ## [0.3.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.2.0...v0.3.0) (2020-06-23)
