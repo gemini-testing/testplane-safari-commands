@@ -21,6 +21,8 @@ exports.mkBrowser_ = () => {
 
     session.executionContext = {};
     session.url = sinon.stub().named('url').resolves();
+    session.click = sinon.stub().named('click').resolves();
+    session.touch = sinon.stub().named('touch').resolves();
     session.touchAction = sinon.stub().named('touchAction').resolves();
     session.getElementSize = sinon.stub().named('getElementSize').resolves({});
     session.getLocation = sinon.stub().named('getLocation').resolves({});
