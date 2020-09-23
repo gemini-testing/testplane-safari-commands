@@ -21,4 +21,16 @@ describe('"click" command', () => {
 
         assert.calledOnceWith(browser.touch, '.some-selector');
     });
+
+    it('should call base click-command if "unwrap" option is specified', async () => {
+        const browser = mkBrowser_();
+        const baseClick = browser.click;
+
+        addClickCommand(browser);
+
+        await browser.click('some-selector', {unwrap: true});
+
+        assert.calledOnceWith(baseClick, 'some-selector');
+        assert.notCalled(browser.touch);
+    });
 });

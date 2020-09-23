@@ -65,6 +65,9 @@ Wrappers over existing commands:
 * **touch** - replaces wdio "touch" in order to perform touch click by coordinates in native context;
 * **dragAndDrop** - replaces wdio "dragAndDrop" in order to perform drag and drop elements by coordinates in native context.
 
+Commands to work with native elements:
+* **deviceClickBack** - command to click back button on device, which closes the current tab and returns to the previous one.
+
 ## Testing
 
 Run [mocha](http://mochajs.org) tests:
