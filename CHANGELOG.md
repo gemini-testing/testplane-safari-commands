@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.3...v0.3.4) (2020-09-23)
+
+
+### Features
+
+* add "deviceClickBack" command ([f9a4d3c](https://github.com/gemini-testing/hermione-safari-commands/commit/f9a4d3cd0a38312a60004fcb29f586bc07088fb8))
+
 ### [0.3.3](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.2...v0.3.3) (2020-09-22)
 
 
