@@ -30,6 +30,7 @@
   "homepage": "https://github.com/gemini-testing/hermione-safari-commands#readme",
   "dependencies": {
     "concat-stream": "^2.0.0",
+    "debug": "^4.3.1",
     "gemini-configparser": "^1.0.0",
     "lodash": "^4.17.15",
     "pngjs": "^5.0.0",
