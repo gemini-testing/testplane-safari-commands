@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.5](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.4...v0.3.5) (2021-02-15)
+
+
+### Bug Fixes
+
+* **screenshot:** set "left" and "top" crop coords to zero when they are negative ([50db9ee](https://github.com/gemini-testing/hermione-safari-commands/commit/50db9eeaa9ae15339b4380367f8bd7dd2a9f6f99))
+
 ### [0.3.4](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.3...v0.3.4) (2020-09-23)
 
 
