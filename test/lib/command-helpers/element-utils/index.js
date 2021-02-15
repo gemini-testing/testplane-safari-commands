@@ -228,31 +228,49 @@ describe('"element-utils" helper', () => {
             });
         });
 
-        describe('should correctly calc web view "left" coord', () => {
-            it('with substract passed body width from web view width and take half of it', async () => {
-                utils.getWebViewSize.withArgs(browser).returns({width: 20});
+        describe('web view "left" coord', () => {
+            describe('should correctly calc', () => {
+                it('with substract passed body width from web view width and take half of it', async () => {
+                    utils.getWebViewSize.withArgs(browser).returns({width: 20});
 
-                const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10});
+                    const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10});
 
-                assert.equal(left, 5);
+                    assert.equal(left, 5);
+                });
+
+                it('with multiply real web view width by passed pixel ratio', async () => {
+                    utils.getWebViewSize.withArgs(browser).returns({width: 20});
+
+                    const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10, pixelRatio: 2});
+
+                    assert.equal(left, 10);
+                });
             });
 
-            it('with multiply real web view width by passed pixel ratio', async () => {
-                utils.getWebViewSize.withArgs(browser).returns({width: 20});
+            it('should set to zero if calculated coord is negative', async () => {
+                utils.getWebViewSize.withArgs(browser).returns({width: 10});
 
-                const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10, pixelRatio: 2});
+                const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 20});
 
-                assert.equal(left, 10);
+                assert.equal(left, 0);
             });
         });
 
-        describe('should correctly calc web view "top" coord', () => {
-            it('with multiply top toolbar height by passed pixel ratio', async () => {
+        describe('web view "top" coord', () => {
+            it('should correctly calc with multiply top toolbar height by passed pixel ratio', async () => {
                 utils.getTopToolbarHeight.withArgs(browser).returns(2);
 
                 const {top} = await utils.calcWebViewCoords(browser, {pixelRatio: 2});
 
                 assert.equal(top, 4);
+            });
+
+            it('should set to zero if calculated coord is negative', async () => {
+                utils.getTopToolbarHeight.withArgs(browser).returns(-10);
+
+                const {top} = await utils.calcWebViewCoords(browser, {pixelRatio: 1});
+
+                assert.equal(top, 0);
             });
         });
 
