@@ -192,9 +192,17 @@ describe('"element-utils" helper', () => {
             sinon.stub(utils, 'getWebViewSize').withArgs(browser).returns({height: 0, width: 0});
         });
 
-        describe('should correctly calc web view "width"', () => {
-            it('with multiply passed body width by passed pixel ratio', async () => {
+        describe('web view "width" coord', () => {
+            it('should calc with multiply body width by pixel ratio', async () => {
+                utils.getWebViewSize.withArgs(browser).returns({width: 200});
                 const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 100, pixelRatio: 2});
+
+                assert.equal(width, 200);
+            });
+
+            it('should calc with multiplye web view width by pixel ratio', async () => {
+                utils.getWebViewSize.withArgs(browser).returns({width: 100});
+                const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 200, pixelRatio: 2});
 
                 assert.equal(width, 200);
             });
