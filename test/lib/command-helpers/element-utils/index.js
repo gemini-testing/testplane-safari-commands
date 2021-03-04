@@ -6,7 +6,7 @@ const {TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE, PIXEL_RATIO} = 
 const {TOP_TOOLBAR, BOTTOM_TOOLBAR, WEB_VIEW} = require('lib/native-locators');
 
 describe('"element-utils" helper', () => {
-    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo;
+    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo, isWdioLatest;
 
     beforeEach(() => {
         browser = mkBrowser_();
@@ -14,9 +14,11 @@ describe('"element-utils" helper', () => {
         withExisting = sinon.stub().named('withExisting').resolves({});
         withNativeCtx = sinon.stub().named('withNativeCtx').resolves({});
         withTestCtxMemo = sinon.stub().named('withTestCtxMemo').resolves({});
+        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
         utils = proxyquire('lib/command-helpers/element-utils', {
-            './decorators': {withExisting, withNativeCtx, withTestCtxMemo}
+            './decorators': {withExisting, withNativeCtx, withTestCtxMemo},
+            '../../utils': {isWdioLatest}
         });
     });
 
@@ -173,15 +175,23 @@ describe('"element-utils" helper', () => {
             assert.calledOnceWith(withTestCtxMemo, {fn: sinon.match.func}, PIXEL_RATIO);
         });
 
-        it('should return pixel ratio value from wrapped action', async () => {
-            browser.execute.resolves({value: 100500});
+        [
+            {name: 'latest', executeRes: 100500, isWdioLatestRes: true},
+            {name: 'old', executeRes: {value: 100500}, isWdioLatestRes: false}
+        ].forEach(({name, executeRes, isWdioLatestRes}) => {
+            describe(`executed with ${name} wdio`, () => {
+                it('should return pixel ratio from wrapped action', async () => {
+                    browser.execute.resolves(executeRes);
+                    isWdioLatest.returns(isWdioLatestRes);
 
-            await utils.getPixelRatio(browser);
+                    await utils.getPixelRatio(browser);
 
-            const baseAction = withTestCtxMemo.firstCall.args[0];
-            const pixelRatio = await baseAction.fn();
+                    const baseAction = withTestCtxMemo.firstCall.args[0];
+                    const pixelRatio = await baseAction.fn();
 
-            assert.equal(pixelRatio, 100500);
+                    assert.equal(pixelRatio, 100500);
+                });
+            });
         });
     });
 

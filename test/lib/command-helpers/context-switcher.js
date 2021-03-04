@@ -7,7 +7,7 @@ const {NATIVE_CONTEXT} = require('lib/constants');
 const {IS_NATIVE_CTX, WEB_VIEW_CTX} = require('lib/command-helpers/test-context');
 
 describe('"context-switcher" helper', () => {
-    let browser, actionFn, getTestContext, runInNativeContext;
+    let browser, actionFn, getTestContext, runInNativeContext, isWdioLatest;
 
     const runInContext_ = async (browser, action = {}, testCtx) => {
         action = _.defaults(action, {fn: actionFn, args: 'default-args'});
@@ -18,10 +18,12 @@ describe('"context-switcher" helper', () => {
     beforeEach(() => {
         browser = mkBrowser_();
         actionFn = sinon.stub().named('action.fn').resolves();
-        getTestContext = sinon.stub().returns({});
+        getTestContext = sinon.stub().named('getTestContext').returns({});
+        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
         runInNativeContext = proxyquire('lib/command-helpers/context-switcher', {
-            './test-context': {getTestContext}
+            './test-context': {getTestContext},
+            '../utils': {isWdioLatest}
         }).runInNativeContext;
     });
 
@@ -76,13 +78,21 @@ describe('"context-switcher" helper', () => {
                 assert.calledOnceWith(browser.contexts);
             });
 
-            it(`should set "${WEB_VIEW_CTX}" to test context`, async () => {
-                const testCtx = {};
-                browser.contexts.resolves({value: [NATIVE_CONTEXT, 'WEBVIEW_12345']});
+            [
+                {name: 'latest', contexts: [NATIVE_CONTEXT, 'WEBVIEW_12345'], isWdioLatestRes: true},
+                {name: 'old', contexts: {value: [NATIVE_CONTEXT, 'WEBVIEW_12345']}, isWdioLatestRes: false}
+            ].forEach(({name, contexts, isWdioLatestRes}) => {
+                describe(`executed with ${name} wdio`, () => {
+                    it(`should set "${WEB_VIEW_CTX}" to test context`, async () => {
+                        const testCtx = {};
+                        browser.contexts.resolves(contexts);
+                        isWdioLatest.returns(isWdioLatestRes);
 
-                await runInContext_(browser, {}, testCtx);
+                        await runInContext_(browser, {}, testCtx);
 
-                assert.equal(testCtx[WEB_VIEW_CTX], 'WEBVIEW_12345');
+                        assert.equal(testCtx[WEB_VIEW_CTX], 'WEBVIEW_12345');
+                    });
+                });
             });
 
             it('should get current contexts before switching to native context', async () => {
