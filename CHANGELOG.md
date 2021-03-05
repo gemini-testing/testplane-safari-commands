@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.6...v0.4.0) (2021-03-05)
+
+
+### Features
+
+* ability to work correctly with wdio@7 inside hermione ([96252ed](https://github.com/gemini-testing/hermione-safari-commands/commit/96252ed392fd394e24261f885d3652ec29e1930a))
+
 ### [0.3.6](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.5...v0.3.6) (2021-02-16)
 
 
