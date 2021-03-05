@@ -9,7 +9,7 @@ const proxyquire = require('proxyquire');
 const {mkBrowser_} = require('../../utils');
 
 describe('"screenshot" command', () => {
-    let wrapScreenshotCommand, browser, pngCtor, calcWebViewCoords, getPixelRatio, runInNativeContext;
+    let wrapScreenshotCommand, browser, pngCtor, calcWebViewCoords, getPixelRatio, runInNativeContext, isWdioLatest;
 
     const mkReadStream_ = ({chunk} = {}) => {
         const mockReadStream = new PassThrough();
@@ -26,11 +26,13 @@ describe('"screenshot" command', () => {
         calcWebViewCoords = sinon.stub().named('calcWebViewCoords');
         getPixelRatio = sinon.stub().named('getPixelRatio').returns(1);
         runInNativeContext = sinon.stub().named('runInNativeContext').returns({});
+        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
         wrapScreenshotCommand = proxyquire('lib/commands/screenshot', {
             pngjs: {PNG: pngCtor.returns(Object.create(PNG.prototype))},
             '../command-helpers/element-utils': {calcWebViewCoords, getPixelRatio},
-            '../command-helpers/context-switcher': {runInNativeContext}
+            '../command-helpers/context-switcher': {runInNativeContext},
+            '../utils': {isWdioLatest}
         });
 
         sinon.stub(PNG.prototype, 'bitblt');
@@ -49,16 +51,34 @@ describe('"screenshot" command', () => {
         assert.calledOnceWith(browser.addCommand, 'screenshot', sinon.match.func, true);
     });
 
-    it('should capture the whole page using base "screenshot" command before starting to handle it', async () => {
-        const buf = Buffer.from('screenshot-data');
-        const baseScreenshotFn = browser.screenshot.resolves({value: buf.toString('base64')});
+    describe('executed with latest wdio', () => {
+        it('should capture the whole page using base "screenshot" command before starting to handle it', async () => {
+            const buf = Buffer.from('screenshot-data');
+            const baseScreenshotFn = browser.screenshot.resolves(buf.toString('base64'));
+            isWdioLatest.returns(true);
 
-        sinon.spy(streamifier, 'createReadStream');
-        wrapScreenshotCommand(browser);
+            sinon.spy(streamifier, 'createReadStream');
+            wrapScreenshotCommand(browser);
 
-        await browser.screenshot();
+            await browser.screenshot();
 
-        assert.callOrder(baseScreenshotFn, streamifier.createReadStream.withArgs(buf));
+            assert.callOrder(baseScreenshotFn, streamifier.createReadStream.withArgs(buf));
+        });
+    });
+
+    describe('executed with old wdio', () => {
+        it('should capture the whole page using base "screenshot" command before starting to handle it', async () => {
+            const buf = Buffer.from('screenshot-data');
+            const baseScreenshotFn = browser.screenshot.resolves({value: buf.toString('base64')});
+            isWdioLatest.returns(false);
+
+            sinon.spy(streamifier, 'createReadStream');
+            wrapScreenshotCommand(browser);
+
+            await browser.screenshot();
+
+            assert.callOrder(baseScreenshotFn, streamifier.createReadStream.withArgs(buf));
+        });
     });
 
     it('should create source png stream without options', async () => {
@@ -103,17 +123,36 @@ describe('"screenshot" command', () => {
         assert.calledOnceWith(src.bitblt, dst, 50, 75, 200, 300);
     });
 
-    it('should convert destination png data to base64 buffer', async () => {
-        const buf = Buffer.from('screenshot-data');
-        const base64Buf = buf.toString('base64');
-        browser.screenshot.resolves({value: base64Buf});
+    describe('executed with latest wdio', () => {
+        it('should convert destination png data to base64 buffer', async () => {
+            const buf = Buffer.from('screenshot-data');
+            const base64Buf = buf.toString('base64');
+            browser.screenshot.resolves(base64Buf);
+            isWdioLatest.returns(true);
 
-        PNG.prototype.pack.returns(mkReadStream_({chunk: buf}));
-        wrapScreenshotCommand(browser);
+            PNG.prototype.pack.returns(mkReadStream_({chunk: buf}));
+            wrapScreenshotCommand(browser);
 
-        const result = await browser.screenshot();
+            const result = await browser.screenshot();
 
-        assert.deepEqual(result, {value: base64Buf});
+            assert.equal(result, base64Buf);
+        });
+    });
+
+    describe('executed with old wdio', () => {
+        it('should convert destination png data to base64 buffer', async () => {
+            const buf = Buffer.from('screenshot-data');
+            const base64Buf = buf.toString('base64');
+            browser.screenshot.resolves({value: base64Buf});
+            isWdioLatest.returns(false);
+
+            PNG.prototype.pack.returns(mkReadStream_({chunk: buf}));
+            wrapScreenshotCommand(browser);
+
+            const result = await browser.screenshot();
+
+            assert.deepEqual(result, {value: base64Buf});
+        });
     });
 
     describe('should handle the error if', () => {

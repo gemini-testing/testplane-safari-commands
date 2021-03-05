@@ -33,6 +33,7 @@ exports.mkBrowser_ = () => {
     session.isVisible = sinon.stub().named('isVisible').resolves();
     session.isExisting = sinon.stub().named('isExisting').resolves(false);
     session.orientation = sinon.stub().named('orientation').resolves({value: 'default-orientation'});
+    session.setOrientation = sinon.stub().named('setOrientation').resolves('default-orientation');
     session.screenshot = sinon.stub().named('screenshot').resolves({value: 'default-base64'});
 
     session.addCommand = sinon.stub().callsFake((name, command) => {
