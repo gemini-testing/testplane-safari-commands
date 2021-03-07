@@ -45,17 +45,39 @@ describe('"screenshot" command', () => {
 
     afterEach(() => sinon.restore());
 
-    it('should wrap "screenshot" command', () => {
-        wrapScreenshotCommand(browser);
+    describe('executed with latest wdio', () => {
+        beforeEach(() => {
+            isWdioLatest.returns(true);
+        });
 
-        assert.calledOnceWith(browser.addCommand, 'screenshot', sinon.match.func, true);
+        it('should wrap "takeScreenshot" command', () => {
+            wrapScreenshotCommand(browser);
+
+            assert.calledOnceWith(browser.addCommand, 'takeScreenshot', sinon.match.func, true);
+        });
+
+        it('should capture the whole page using base "takeScreenshot" command before starting to handle it', async () => {
+            const buf = Buffer.from('screenshot-data');
+            const baseTakeScreenshotFn = browser.takeScreenshot.resolves(buf.toString('base64'));
+            isWdioLatest.returns(true);
+
+            sinon.spy(streamifier, 'createReadStream');
+            wrapScreenshotCommand(browser);
+
+            await browser.takeScreenshot();
+
+            assert.callOrder(baseTakeScreenshotFn, streamifier.createReadStream.withArgs(buf));
+        });
     });
 
-    describe('executed with latest wdio', () => {
+    describe('executed with old wdio', () => {
+        beforeEach(() => {
+            isWdioLatest.returns(false);
+        });
+
         it('should capture the whole page using base "screenshot" command before starting to handle it', async () => {
             const buf = Buffer.from('screenshot-data');
-            const baseScreenshotFn = browser.screenshot.resolves(buf.toString('base64'));
-            isWdioLatest.returns(true);
+            const baseScreenshotFn = browser.screenshot.resolves({value: buf.toString('base64')});
 
             sinon.spy(streamifier, 'createReadStream');
             wrapScreenshotCommand(browser);
@@ -64,20 +86,11 @@ describe('"screenshot" command', () => {
 
             assert.callOrder(baseScreenshotFn, streamifier.createReadStream.withArgs(buf));
         });
-    });
 
-    describe('executed with old wdio', () => {
-        it('should capture the whole page using base "screenshot" command before starting to handle it', async () => {
-            const buf = Buffer.from('screenshot-data');
-            const baseScreenshotFn = browser.screenshot.resolves({value: buf.toString('base64')});
-            isWdioLatest.returns(false);
-
-            sinon.spy(streamifier, 'createReadStream');
+        it('should wrap "screenshot" command', () => {
             wrapScreenshotCommand(browser);
 
-            await browser.screenshot();
-
-            assert.callOrder(baseScreenshotFn, streamifier.createReadStream.withArgs(buf));
+            assert.calledOnceWith(browser.addCommand, 'screenshot', sinon.match.func, true);
         });
     });
 
@@ -127,13 +140,13 @@ describe('"screenshot" command', () => {
         it('should convert destination png data to base64 buffer', async () => {
             const buf = Buffer.from('screenshot-data');
             const base64Buf = buf.toString('base64');
-            browser.screenshot.resolves(base64Buf);
+            browser.takeScreenshot.resolves(base64Buf);
             isWdioLatest.returns(true);
 
             PNG.prototype.pack.returns(mkReadStream_({chunk: buf}));
             wrapScreenshotCommand(browser);
 
-            const result = await browser.screenshot();
+            const result = await browser.takeScreenshot();
 
             assert.equal(result, base64Buf);
         });
