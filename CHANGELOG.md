@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.0...v0.4.1) (2021-03-07)
+
+
+### Bug Fixes
+
+* wrap "takeScreenshot" instead "screenshot" with wdio@7 ([65e9dba](https://github.com/gemini-testing/hermione-safari-commands/commit/65e9dba0f5ff19e49290852cc7b6a6bd143292e6))
+
 ## [0.4.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.3.6...v0.4.0) (2021-03-05)
 
 
