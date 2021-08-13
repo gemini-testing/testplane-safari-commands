@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.2](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.1...v0.4.2) (2021-08-13)
+
+
+### Features
+
+* click in facke input to hide caret ([ce4f41e](https://github.com/gemini-testing/hermione-safari-commands/commit/ce4f41e0ffd860bdc5f1de835a4315f0a2a39e51))
+
 ### [0.4.1](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.0...v0.4.1) (2021-03-07)
 
 
