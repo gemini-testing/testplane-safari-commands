@@ -7,6 +7,7 @@ const commands = require('lib/commands');
 const {mkConfig_, mkBrowser_} = require('../utils');
 
 describe('plugin', () => {
+    let initialDocument;
     const mkHermione_ = (opts = {}) => {
         opts = _.defaults(opts, {
             proc: 'master',
@@ -15,7 +16,7 @@ describe('plugin', () => {
 
         const hermione = new EventEmitter();
 
-        hermione.events = {NEW_BROWSER: 'newBrowser'};
+        hermione.events = {NEW_BROWSER: 'newBrowser', SESSION_START: 'sessionStart'};
         hermione.isWorker = sinon.stub().returns(opts.proc === 'worker');
         hermione.config = {
             forBrowser: (id) => opts.browsers[id] || {desiredCapabilities: {}}
@@ -28,9 +29,21 @@ describe('plugin', () => {
         Object.keys(commands).forEach((command) => {
             commands[command] = sinon.stub();
         });
+
+        global.document = {
+            createElement: sinon.stub(),
+            body: {
+                append: sinon.stub()
+            }
+        };
+
+        initialDocument = global.document;
     });
 
-    afterEach(() => sinon.restore());
+    afterEach(() => {
+        sinon.restore();
+        global.document = initialDocument;
+    });
 
     it('should do nothing if plugin is disabled', () => {
         const hermione = mkHermione_();
@@ -42,17 +55,72 @@ describe('plugin', () => {
     });
 
     describe('master process', () => {
-        it('should do nothing', () => {
-            const hermione = mkHermione_({proc: 'master'});
-            sinon.spy(hermione, 'on');
+        describe('"SESSION_START" event', () => {
+            it('should create fake input and focus on it for plugin browsers', () => {
+                const hermione = mkHermione_({proc: 'master'});
 
-            plugin(hermione, mkConfig_());
+                plugin(hermione, mkConfig_({
+                    browsers: {
+                        b1: {
+                            commands: []
+                        }
+                    }
+                }));
 
-            assert.notCalled(hermione.on);
+                const fakeInput = {
+                    setAttribute: sinon.stub(),
+                    focus: sinon.stub()
+                };
+                global.document.createElement.returns(fakeInput);
+
+                const browser = mkBrowser_();
+                browser.execute.callsFake(() => {
+                    browser.execute.firstCall.args[0]();
+                });
+
+                hermione.emit(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+
+                assert.calledWith(document.createElement, 'input');
+                assert.calledWith(fakeInput.setAttribute, 'type', 'text');
+                assert.calledWith(document.body.append, fakeInput);
+                assert.callOrder(fakeInput.setAttribute, global.document.body.append, fakeInput.focus);
+            });
+
+            it('should not create fake input for not plugin browsers', () => {
+                const hermione = mkHermione_({proc: 'master'});
+
+                plugin(hermione, mkConfig_({
+                    browsers: {
+                        b1: {
+                            commands: []
+                        }
+                    }
+                }));
+                const browser = mkBrowser_();
+
+                hermione.emit(hermione.events.SESSION_START, browser, {browserId: 'b2'});
+
+                assert.notCalled(browser.execute);
+            });
         });
     });
 
     describe('worker process', () => {
+        it('should not subscribe on "SESSION_START" event', () => {
+            const hermione = mkHermione_({proc: 'worker'});
+            sinon.spy(hermione, 'on');
+
+            plugin(hermione, mkConfig_({
+                browsers: {
+                    b1: {
+                        commands: []
+                    }
+                }
+            }));
+
+            assert.calledOnceWith(hermione.on, hermione.events.NEW_BROWSER);
+        });
+
         describe('"NEW_BROWSER" event', () => {
             it('should throws if passed command is not implemented', () => {
                 const hermione = mkHermione_({proc: 'worker'});
