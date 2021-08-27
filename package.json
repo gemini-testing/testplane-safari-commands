@@ -9,6 +9,9 @@
     "test-unit": "mocha",
     "release": "standard-version"
   },
+  "bin": {
+    "custom-xcrun": "./bin/custom-xcrun"
+  },
   "engines": {
     "node": ">= 8.0.0"
   },

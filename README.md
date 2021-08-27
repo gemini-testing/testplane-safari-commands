@@ -68,6 +68,25 @@ Wrappers over existing commands:
 Commands to work with native elements:
 * **deviceClickBack** - command to click back button on device, which closes the current tab and returns to the previous one.
 
+### Keyboard hiding
+Keyboard hiding using `webdriver` or `simctl` is not posible now. So we are providing custom `xcrun` binary file, which can turn off simulator software keyboard (works since appium@1.22.0-beta.0). To turn off software keyboard you need to do next steps:
+- add `connectHardwareKeyboard: true` desired capability:
+```js
+browsers: {
+    safari13: {
+        desiredCapabilities: {
+            connectHardwareKeyboard: true,
+            ...
+        }
+    }
+}
+```
+- add to your appium environment path to our custom `xcrun` binary file:
+
+```
+XCRUN_BINARY=./node_modules/hermione-safari-commands/bin/custom-xcrun appium -p 4444
+```
+
 ## Testing
 
 Run [mocha](http://mochajs.org) tests:
