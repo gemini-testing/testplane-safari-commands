@@ -7,21 +7,21 @@
 # We don't need to make toggle if the file contains the simulator id. The file is temporary because we need to toggle
 # keyboard again when device with simulator was rebooted (the file becomes empty after rebooting).
 
-touch /tmp/toggled-simulator-ids
+# touch /tmp/toggled-simulator-ids
 
 # Calling xcrun with "spawn" and "launchctl" - moment when appium spawns a new session.
-if [[ $2 = "spawn" ]] && [[ $4 = "launchctl" ]]; then
-    grep -q $3 /tmp/toggled-simulator-ids;
-    if [ $? -ne 0 ]; then
-        echo -e $3 >> /tmp/toggled-simulator-ids
-        osascript <<EOD
-    tell application "Simulator"
-        activate
-        delay 0.5
-        tell application "System Events" to keystroke "k" using {command down}
-    end tell
+# if [[ $2 = "spawn" ]] && [[ $4 = "launchctl" ]]; then
+    # grep -q $3 /tmp/toggled-simulator-ids;
+    # if [ $? -ne 0 ]; then
+        # echo -e $3 >> /tmp/toggled-simulator-ids
+osascript <<EOD
+tell application "Simulator"
+    activate
+    delay 0.5
+    tell application "System Events" to keystroke "k" using {command down}
+end tell
 EOD
-    fi
-fi
+#     fi
+# fi
 
-xcrun $@
+# xcrun $@

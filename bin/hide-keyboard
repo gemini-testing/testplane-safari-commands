@@ -1,0 +1,5 @@
+#! /usr/bin/env node
+
+const args = process.argv.slice(2);
+console.log(parseInt(args[0]));
+require('../lib/keyboard-hider')(parseInt(args[0]));
