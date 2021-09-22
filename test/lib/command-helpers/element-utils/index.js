@@ -132,7 +132,9 @@ describe('"element-utils" helper', () => {
             assert.deepEqual(coords, {width: 10, height: 20, x: 1, y: 2});
         });
 
-        it('should return coords of first found element', async () => {
+        // wdio returns elements in reverse order, so we need to take last element in array to pick first element on the page
+        // https://github.com/webdriverio/webdriverio/blob/v4.14.1/lib/commands/getLocation.js#L48.
+        it('should return coords of last found element', async () => {
             browser.getElementSize.withArgs('some-selector').returns(
                 [{width: 10, height: 20}, {width: 100, height: 200}]
             );
@@ -142,7 +144,7 @@ describe('"element-utils" helper', () => {
 
             const coords = await utils.getElemCoords(browser, 'some-selector');
 
-            assert.deepEqual(coords, {width: 10, height: 20, x: 1, y: 2});
+            assert.deepEqual(coords, {width: 10, height: 20, x: 11, y: 22});
         });
 
         it('should increase y coordinate on top toolbar height', async () => {
