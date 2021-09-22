@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.3](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.2...v0.4.3) (2021-09-22)
+
+
+### Bug Fixes
+
+* tap on first element in click command ([0de9018](https://github.com/gemini-testing/hermione-safari-commands/commit/0de901840dad869504d6332955f6d36a81ce4b2b))
+
 ### [0.4.2](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.1...v0.4.2) (2021-08-13)
 
 
