@@ -28,6 +28,7 @@ exports.mkBrowser_ = () => {
     session.getLocation = sinon.stub().named('getLocation').resolves({});
     session.context = sinon.stub().named('context').resolves({value: 'default-ctx'});
     session.contexts = sinon.stub().named('contexts').resolves({value: ['default-ctx-1', 'default-ctx-2']});
+    session.getContexts = sinon.stub().named('getContexts').resolves({value: ['default-ctx-1', 'default-ctx-2']});
     session.execute = sinon.stub().named('execute').resolves();
     session.waitUntil = sinon.stub().named('waitUntil').resolves();
     session.isVisible = sinon.stub().named('isVisible').resolves();
@@ -36,6 +37,7 @@ exports.mkBrowser_ = () => {
     session.setOrientation = sinon.stub().named('setOrientation').resolves('default-orientation');
     session.screenshot = sinon.stub().named('screenshot').resolves({value: 'default-base64'});
     session.takeScreenshot = sinon.stub().named('takeScreenshot').resolves('default-base64');
+    session.extendOptions = sinon.stub().named('extendOptions').resolves();
 
     session.addCommand = sinon.stub().callsFake((name, command) => {
         session[name] = command;

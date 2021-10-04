@@ -1,22 +1,31 @@
 'use strict';
 
-const {EventEmitter} = require('events');
 const _ = require('lodash');
+const {events: {AsyncEmitter}} = require('gemini-core');
+
 const plugin = require('lib');
 const commands = require('lib/commands');
+const utils = require('lib/utils');
+const {NATIVE_CONTEXT} = require('lib/constants');
+const {WEB_VIEW_CTX} = require('lib/command-helpers/test-context');
 const {mkConfig_, mkBrowser_} = require('../utils');
 
 describe('plugin', () => {
     let initialDocument;
+
     const mkHermione_ = (opts = {}) => {
         opts = _.defaults(opts, {
             proc: 'master',
             browsers: {}
         });
 
-        const hermione = new EventEmitter();
+        const hermione = new AsyncEmitter();
 
-        hermione.events = {NEW_BROWSER: 'newBrowser', SESSION_START: 'sessionStart'};
+        hermione.events = {
+            NEW_BROWSER: 'newBrowser',
+            SESSION_START: 'sessionStart',
+            AFTER_TESTS_READ: 'afterTestsRead'
+        };
         hermione.isWorker = sinon.stub().returns(opts.proc === 'worker');
         hermione.config = {
             forBrowser: (id) => opts.browsers[id] || {desiredCapabilities: {}}
@@ -26,6 +35,8 @@ describe('plugin', () => {
     };
 
     beforeEach(() => {
+        sinon.stub(utils, 'isWdioLatest').returns(false);
+
         Object.keys(commands).forEach((command) => {
             commands[command] = sinon.stub();
         });
@@ -56,7 +67,24 @@ describe('plugin', () => {
 
     describe('master process', () => {
         describe('"SESSION_START" event', () => {
-            it('should create fake input and focus on it for plugin browsers', () => {
+            it('should do nothing if browser does not exist in plugin config', async () => {
+                const hermione = mkHermione_({proc: 'master'});
+
+                plugin(hermione, mkConfig_({
+                    browsers: {
+                        b1: {
+                            commands: []
+                        }
+                    }
+                }));
+                const browser = mkBrowser_();
+
+                await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b2'});
+
+                assert.notCalled(browser.execute);
+            });
+
+            it('should create fake input and focus on it for plugin browsers', async () => {
                 const hermione = mkHermione_({proc: 'master'});
 
                 plugin(hermione, mkConfig_({
@@ -78,7 +106,7 @@ describe('plugin', () => {
                     browser.execute.firstCall.args[0]();
                 });
 
-                hermione.emit(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+                await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b1'});
 
                 assert.calledWith(document.createElement, 'input');
                 assert.calledWith(fakeInput.setAttribute, 'type', 'text');
@@ -86,21 +114,37 @@ describe('plugin', () => {
                 assert.callOrder(fakeInput.setAttribute, global.document.body.append, fakeInput.focus);
             });
 
-            it('should not create fake input for not plugin browsers', () => {
-                const hermione = mkHermione_({proc: 'master'});
+            [
+                {
+                    name: 'latest', contexts: [NATIVE_CONTEXT, 'WEBVIEW_12345'],
+                    ctxsCmdName: 'getContexts', isWdioLatestRes: true
+                },
+                {
+                    name: 'old', contexts: {value: [NATIVE_CONTEXT, 'WEBVIEW_12345']},
+                    ctxsCmdName: 'contexts', isWdioLatestRes: false
+                }
+            ].forEach(({name, contexts, ctxsCmdName, isWdioLatestRes}) => {
+                describe(`executed with ${name} wdio`, () => {
+                    it('should save web view context in session options', async () => {
+                        const hermione = mkHermione_({proc: 'master'});
 
-                plugin(hermione, mkConfig_({
-                    browsers: {
-                        b1: {
-                            commands: []
-                        }
-                    }
-                }));
-                const browser = mkBrowser_();
+                        plugin(hermione, mkConfig_({
+                            browsers: {
+                                b1: {
+                                    commands: []
+                                }
+                            }
+                        }));
 
-                hermione.emit(hermione.events.SESSION_START, browser, {browserId: 'b2'});
+                        const browser = mkBrowser_();
+                        browser[ctxsCmdName].resolves(contexts);
+                        utils.isWdioLatest.returns(isWdioLatestRes);
 
-                assert.notCalled(browser.execute);
+                        await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+
+                        assert.calledOnceWith(browser.extendOptions, {[WEB_VIEW_CTX]: 'WEBVIEW_12345'});
+                    });
+                });
             });
         });
     });
@@ -118,7 +162,7 @@ describe('plugin', () => {
                 }
             }));
 
-            assert.calledOnceWith(hermione.on, hermione.events.NEW_BROWSER);
+            assert.isTrue(hermione.on.neverCalledWith(hermione.events.SESSION_START));
         });
 
         describe('"NEW_BROWSER" event', () => {
@@ -246,6 +290,71 @@ describe('plugin', () => {
 
                     assert.calledOnce(commands.orientation);
                 });
+            });
+        });
+
+        describe('"AFTER_TESTS_READ" event', () => {
+            describe('should not add "beforeEach" hook', () => {
+                let rootSuite;
+
+                beforeEach(() => {
+                    rootSuite = {beforeEach: sinon.spy().named('beforeEach')};
+                });
+
+                it('for browsers that not specified in plugin config', () => {
+                    const hermione = mkHermione_({proc: 'worker'});
+                    plugin(hermione, mkConfig_({
+                        browsers: {b1: {}}
+                    }));
+
+                    hermione.emit(hermione.events.AFTER_TESTS_READ, {
+                        eachRootSuite: (cb) => cb(rootSuite, 'b2')
+                    });
+
+                    assert.notCalled(rootSuite.beforeEach);
+                });
+
+                it('if test runs in one session', () => {
+                    const hermione = mkHermione_({
+                        proc: 'worker',
+                        browsers: {
+                            b1: {testsPerSession: 1}
+                        }
+                    });
+                    plugin(hermione, mkConfig_({
+                        browsers: {b1: {}}
+                    }));
+
+                    hermione.emit(hermione.events.AFTER_TESTS_READ, {
+                        eachRootSuite: (cb) => cb(rootSuite, 'b1')
+                    });
+
+                    assert.notCalled(rootSuite.beforeEach);
+                });
+            });
+
+            it('should change web view context in "beforeEach" hook', async () => {
+                const hermione = mkHermione_({
+                    proc: 'worker',
+                    browsers: {
+                        b1: {testsPerSession: 2}
+                    }
+                });
+                plugin(hermione, mkConfig_({
+                    browsers: {b1: {}}
+                }));
+
+                const rootSuite = {beforeEach: sinon.spy().named('beforeEach')};
+                hermione.emit(hermione.events.AFTER_TESTS_READ, {
+                    eachRootSuite: (cb) => cb(rootSuite, 'b1')
+                });
+
+                const browser = mkBrowser_();
+                browser.options = {[WEB_VIEW_CTX]: 'WEBVIEW_12345'};
+                const beforeEachHook = rootSuite.beforeEach.lastCall.args[0];
+                await beforeEachHook.call({browser});
+
+                assert.calledOnceWith(browser.context, 'WEBVIEW_12345');
             });
         });
     });
