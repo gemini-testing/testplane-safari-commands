@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.4](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.3...v0.4.4) (2021-10-05)
+
+
+### Bug Fixes
+
+* change ctx to web before each test execution ([6829051](https://github.com/gemini-testing/hermione-safari-commands/commit/6829051e2aca91cd08419b1833a81aa6a0a727d3))
+
 ### [0.4.3](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.2...v0.4.3) (2021-09-22)
 
 
