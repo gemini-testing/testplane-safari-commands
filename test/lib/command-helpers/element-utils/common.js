@@ -2,11 +2,23 @@
 
 const proxyquire = require('proxyquire');
 const {mkBrowser_} = require('../../../utils');
-const {TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE, PIXEL_RATIO} = require('lib/command-helpers/test-context');
-const {TOP_TOOLBAR, BOTTOM_TOOLBAR, WEB_VIEW} = require('lib/native-locators');
+const {BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE, PIXEL_RATIO} = require('lib/command-helpers/test-context');
+const {getNativeLocators} = require('lib/native-locators');
 
-describe('"element-utils" helper', () => {
+describe('common "element-utils" helper', () => {
     let browser, utils, withExisting, withNativeCtx, withTestCtxMemo, isWdioLatest;
+    let BOTTOM_TOOLBAR, WEB_VIEW;
+
+    const mkUtilsStub = (nativeLocators) => {
+        const CommonUtils = proxyquire('lib/command-helpers/element-utils/common', {
+            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo},
+            '../../../utils': {isWdioLatest}
+        });
+
+        sinon.stub(CommonUtils.prototype, 'getTopToolbarHeight').returns(0);
+
+        return new CommonUtils(nativeLocators);
+    };
 
     beforeEach(() => {
         browser = mkBrowser_();
@@ -16,47 +28,14 @@ describe('"element-utils" helper', () => {
         withTestCtxMemo = sinon.stub().named('withTestCtxMemo').resolves({});
         isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
-        utils = proxyquire('lib/command-helpers/element-utils', {
-            './decorators': {withExisting, withNativeCtx, withTestCtxMemo},
-            '../../utils': {isWdioLatest}
-        });
+        const nativeLocators = getNativeLocators(browser);
+
+        utils = mkUtilsStub(nativeLocators);
+        BOTTOM_TOOLBAR = nativeLocators.BOTTOM_TOOLBAR;
+        WEB_VIEW = nativeLocators.WEB_VIEW;
     });
 
     afterEach(() => sinon.restore());
-
-    describe('"getTopToolbarHeight" method', () => {
-        it('should wrap base action to "withExisting" wrapper', async () => {
-            const action = {fn: browser.getElementSize, args: TOP_TOOLBAR, default: {width: 0, height: 0}};
-
-            await utils.getTopToolbarHeight(browser);
-
-            const existingWrapper = withTestCtxMemo.firstCall.args[0].args;
-            assert.deepEqual(existingWrapper, {fn: withExisting, args: action});
-        });
-
-        it('should wrap "withExisting" wrapper to "withNativeCtx" wrapper', async () => {
-            await utils.getTopToolbarHeight(browser);
-
-            const checkBroCtxWrapper = withTestCtxMemo.firstCall.args[0];
-            assert.equal(checkBroCtxWrapper.fn, withNativeCtx);
-            assert.equal(checkBroCtxWrapper.args.fn, withExisting);
-        });
-
-        it('should call "withTestCtxMemo" wrapper with correct args', async () => {
-            await utils.getTopToolbarHeight(browser);
-
-            assert.calledOn(withTestCtxMemo, browser);
-            assert.calledOnceWith(withTestCtxMemo, sinon.match({fn: withNativeCtx}), TOP_TOOLBAR_SIZE);
-        });
-
-        it('should return top toolbar "height" size from "withTestCtxMemo" wrapper', async () => {
-            withTestCtxMemo.resolves({width: 1, height: 2});
-
-            const height = await utils.getTopToolbarHeight(browser);
-
-            assert.equal(height, 2);
-        });
-    });
 
     describe('"getBottomToolbarY" method', () => {
         it('should wrap base action to "withExisting" wrapper', async () => {
@@ -84,7 +63,7 @@ describe('"element-utils" helper', () => {
         });
 
         it('should return bottom toolbar "y" coord from "withTestCtxMemo" wrapper', async () => {
-            withTestCtxMemo.resolves({x: 1, y: 2});
+            withTestCtxMemo.withArgs(sinon.match.any, BOTTOM_TOOLBAR_LOCATION).resolves({x: 1, y: 2});
 
             const y = await utils.getBottomToolbarY(browser);
 
@@ -110,7 +89,7 @@ describe('"element-utils" helper', () => {
         });
 
         it('should return web view size from "withTestCtxMemo" wrapper', async () => {
-            withTestCtxMemo.resolves({width: 1, height: 2});
+            withTestCtxMemo.withArgs(sinon.match.any, WEB_VIEW_SIZE).resolves({width: 1, height: 2});
 
             const size = await utils.getWebViewSize(browser);
 
@@ -119,10 +98,6 @@ describe('"element-utils" helper', () => {
     });
 
     describe('"getElemCoords" method', () => {
-        beforeEach(() => {
-            sinon.stub(utils, 'getTopToolbarHeight').returns(0);
-        });
-
         it('should return element coords', async () => {
             browser.getElementSize.withArgs('some-selector').returns({width: 10, height: 20});
             browser.getLocation.withArgs('some-selector').returns({x: 1, y: 2});
@@ -159,12 +134,14 @@ describe('"element-utils" helper', () => {
 
     describe('"getElemCenterLocation" method', () => {
         it('should return center coords of passed selector', async () => {
-            sinon.stub(utils, 'getElemCoords')
-                .withArgs(browser, 'some-selector')
-                .returns({width: 10, height: 20, x: 1.1, y: 2.9});
+            browser.getElementSize.withArgs('some-selector').returns(
+                [{width: 10, height: 20}]
+            );
+            browser.getLocation.withArgs('some-selector').returns(
+                [{x: 1.1, y: 2.9}]
+            );
 
             const coords = await utils.getElemCenterLocation(browser, 'some-selector');
-
             assert.deepEqual(coords, {x: 6, y: 13});
         });
     });
@@ -199,7 +176,6 @@ describe('"element-utils" helper', () => {
 
     describe('"calcWebViewCoords" method', () => {
         beforeEach(() => {
-            sinon.stub(utils, 'getTopToolbarHeight').withArgs(browser).returns(0);
             sinon.stub(utils, 'getBottomToolbarY').withArgs(browser).returns(0);
             sinon.stub(utils, 'getWebViewSize').withArgs(browser).returns({height: 0, width: 0});
         });
@@ -207,6 +183,7 @@ describe('"element-utils" helper', () => {
         describe('web view "width" coord', () => {
             it('should calc with multiply body width by pixel ratio', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({width: 200});
+
                 const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 100, pixelRatio: 2});
 
                 assert.equal(width, 200);
@@ -214,6 +191,7 @@ describe('"element-utils" helper', () => {
 
             it('should calc with multiplye web view width by pixel ratio', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({width: 100});
+
                 const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 200, pixelRatio: 2});
 
                 assert.equal(width, 200);
