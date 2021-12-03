@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.5](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.4...v0.4.5) (2021-12-03)
+
+
+### Features
+
+* support screenshot cropping for  safari15 ([6be0f85](https://github.com/gemini-testing/hermione-safari-commands/commit/6be0f85d5a0e90da993f0be40ffd5781859ee108))
+
 ### [0.4.4](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.3...v0.4.4) (2021-10-05)
 
 
