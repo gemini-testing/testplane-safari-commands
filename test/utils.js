@@ -16,7 +16,7 @@ exports.matchElemArrayByIndex_ = ({index, value}) => (refValue) => {
     return assert.deepEqual(refValue[index], value) || true;
 };
 
-exports.mkBrowser_ = () => {
+exports.mkBrowser_ = (desiredCapabilities = {}) => {
     const session = Promise.resolve();
 
     session.executionContext = {};
@@ -43,6 +43,8 @@ exports.mkBrowser_ = () => {
         session[name] = command;
         sinon.spy(session, name);
     });
+
+    session.desiredCapabilities = Object.assign({version: '13.0'}, desiredCapabilities);
 
     return session;
 };

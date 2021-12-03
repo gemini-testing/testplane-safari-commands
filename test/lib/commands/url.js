@@ -8,12 +8,12 @@ const {mkBrowser_} = require('../../utils');
 describe('"url" command', () => {
     let browser, initialDocument;
 
-    const wrapUrlCommand_ = (browser, opts = {}) => {
-        opts = _.defaultsDeep(opts, {
+    const wrapUrlCommand_ = (browser, config = {}) => {
+        config = _.defaultsDeep(config, {
             pageLoadTimeout: null
         });
 
-        wrapUrlCommand(browser, opts);
+        wrapUrlCommand(browser, {config});
     };
 
     beforeEach(() => {

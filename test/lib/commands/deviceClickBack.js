@@ -1,14 +1,15 @@
 'use strict';
 
 const proxyquire = require('proxyquire');
-const {DEVICE_BACK} = require('lib/native-locators');
+const {getNativeLocators} = require('lib/native-locators');
 const {mkBrowser_} = require('../../utils');
 
 describe('"deviceClickBack" command', () => {
-    let browser, addDeviceClickBack, runInNativeContext;
+    let browser, addDeviceClickBack, runInNativeContext, nativeLocators;
 
     beforeEach(() => {
         browser = mkBrowser_();
+        nativeLocators = getNativeLocators(browser);
         runInNativeContext = sinon.stub().named('runInNativeContext');
 
         addDeviceClickBack = proxyquire('lib/commands/deviceClickBack', {
@@ -19,13 +20,14 @@ describe('"deviceClickBack" command', () => {
     afterEach(() => sinon.restore());
 
     it('should add command "deviceClickBack"', () => {
-        addDeviceClickBack(browser);
+        addDeviceClickBack(browser, {nativeLocators});
 
         assert.calledOnceWith(browser.addCommand, 'deviceClickBack', sinon.match.func, true);
     });
 
     it('should run "click" action with correct args in native context', async () => {
-        addDeviceClickBack(browser);
+        const {DEVICE_BACK} = getNativeLocators(browser);
+        addDeviceClickBack(browser, {nativeLocators});
 
         await browser.deviceClickBack();
 

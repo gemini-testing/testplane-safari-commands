@@ -2,8 +2,8 @@
 
 const _ = require('lodash');
 const {events: {AsyncEmitter}} = require('gemini-core');
+const proxyquire = require('proxyquire');
 
-const plugin = require('lib');
 const commands = require('lib/commands');
 const utils = require('lib/utils');
 const {NATIVE_CONTEXT} = require('lib/constants');
@@ -11,7 +11,7 @@ const {WEB_VIEW_CTX} = require('lib/command-helpers/test-context');
 const {mkConfig_, mkBrowser_} = require('../utils');
 
 describe('plugin', () => {
-    let initialDocument;
+    let initialDocument, plugin, getElementUtils, getNativeLocators;
 
     const mkHermione_ = (opts = {}) => {
         opts = _.defaults(opts, {
@@ -49,6 +49,14 @@ describe('plugin', () => {
         };
 
         initialDocument = global.document;
+
+        getNativeLocators = sinon.stub();
+        getElementUtils = sinon.stub();
+
+        plugin = proxyquire('lib', {
+            './native-locators': {getNativeLocators},
+            './command-helpers/element-utils': {getElementUtils}
+        });
     });
 
     afterEach(() => {
@@ -200,7 +208,7 @@ describe('plugin', () => {
 
             it('should call passed command', () => {
                 const browser = mkBrowser_();
-                const browserConfig = {foo: 'bar'};
+                const browserConfig = {foo: 'bar', desiredCapabilities: {}};
                 const hermione = mkHermione_({
                     proc: 'worker',
                     browsers: {
@@ -216,9 +224,13 @@ describe('plugin', () => {
                     }
                 }));
 
+                getNativeLocators.returns({some: 'locators'});
+                getElementUtils.returns({some: 'utils'});
+
                 hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
 
-                assert.calledOnceWith(commands.swipe, browser, browserConfig);
+                assert.calledOnceWith(commands.swipe, browser,
+                    {config: browserConfig, elementUtils: {some: 'utils'}, nativeLocators: {some: 'locators'}});
             });
 
             describe('"orientation" command is not specified in config', () => {
@@ -261,10 +273,13 @@ describe('plugin', () => {
                             }
                         }
                     }));
+                    getNativeLocators.returns({some: 'locators'});
+                    getElementUtils.returns({some: 'utils'});
 
                     hermione.emit(hermione.events.NEW_BROWSER, browser, {browserId: 'b1'});
 
-                    assert.calledOnceWith(commands.orientation, browser, browserConfig);
+                    assert.calledOnceWith(commands.orientation, browser, {config: browserConfig,
+                        nativeLocators: {some: 'locators'}, elementUtils: {some: 'utils'}});
                 });
             });
 

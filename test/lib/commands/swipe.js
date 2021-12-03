@@ -4,31 +4,32 @@ const proxyquire = require('proxyquire');
 const {mkBrowser_, matchElemArrayByIndex_} = require('../../utils');
 const {WAIT_BETWEEN_ACTIONS_IN_MS} = require('lib/constants');
 const {TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION} = require('lib/command-helpers/test-context');
+const {getElementUtils} = require('lib/command-helpers/element-utils');
 
 describe('"swipe" command', () => {
-    let browser, addSwipeCommand, resetTestContextValues, getElemCenterLocation;
+    let browser, addSwipeCommand, resetTestContextValues, elementUtils;
 
     beforeEach(() => {
         browser = mkBrowser_();
         resetTestContextValues = sinon.stub();
-        getElemCenterLocation = sinon.stub().resolves({x: 0, y: 0});
+        elementUtils = getElementUtils(browser);
+        sinon.stub(elementUtils, 'getElemCenterLocation').resolves({x: 0, y: 0});
 
         addSwipeCommand = proxyquire('lib/commands/swipe', {
-            '../command-helpers/test-context': {resetTestContextValues},
-            '../command-helpers/element-utils': {getElemCenterLocation}
+            '../command-helpers/test-context': {resetTestContextValues}
         });
     });
 
     afterEach(() => sinon.restore());
 
     it('should add "swipe" command', () => {
-        addSwipeCommand(browser);
+        addSwipeCommand(browser, {elementUtils});
 
         assert.calledOnceWith(browser.addCommand, 'swipe', sinon.match.func, true);
     });
 
     it('should throw error if selector is passed as number', async () => {
-        addSwipeCommand(browser);
+        addSwipeCommand(browser, {elementUtils});
 
         await assert.isRejected(
             browser.swipe(100500),
@@ -43,7 +44,7 @@ describe('"swipe" command', () => {
         {name: 'speed', args: [3, 3, '3']}
     ].forEach(({name, args}) => {
         it(`should throw error if ${name} is passed not as number`, async () => {
-            addSwipeCommand(browser);
+            addSwipeCommand(browser, {elementUtils});
 
             await assert.isRejected(
                 browser.swipe('.some-selector', ...args),
@@ -53,17 +54,17 @@ describe('"swipe" command', () => {
     });
 
     it('should get center location of the passed selector', async () => {
-        addSwipeCommand(browser);
+        addSwipeCommand(browser, {elementUtils});
 
         await browser.swipe('.some-selector');
 
-        assert.calledOnceWith(getElemCenterLocation, browser, '.some-selector');
+        assert.calledOnceWith(elementUtils.getElemCenterLocation, browser, '.some-selector');
     });
 
     describe('perform swipe action', () => {
         it('should press on the center location of the passed selector', async () => {
-            getElemCenterLocation.resolves({x: 100, y: 500});
-            addSwipeCommand(browser);
+            elementUtils.getElemCenterLocation.resolves({x: 100, y: 500});
+            addSwipeCommand(browser, {elementUtils});
 
             await browser.swipe('.some-selector');
 
@@ -80,7 +81,7 @@ describe('"swipe" command', () => {
                 {title: 'equal to zero', speed: 0}
             ].forEach(({title, speed}) => {
                 it(`default time between actions if "speed" is ${title}`, async () => {
-                    addSwipeCommand(browser);
+                    addSwipeCommand(browser, {elementUtils});
 
                     await browser.swipe('.some-selector', 0, 0, speed);
 
@@ -92,7 +93,7 @@ describe('"swipe" command', () => {
             });
 
             it('passed time between actions if "speed" is passed', async () => {
-                addSwipeCommand(browser);
+                addSwipeCommand(browser, {elementUtils});
 
                 await browser.swipe('.some-selector', 0, 0, 100500);
 
@@ -104,8 +105,8 @@ describe('"swipe" command', () => {
         });
 
         it('should move finger to coordinates with passed offsets', async () => {
-            getElemCenterLocation.resolves({x: 200, y: 400});
-            addSwipeCommand(browser);
+            elementUtils.getElemCenterLocation.resolves({x: 200, y: 400});
+            addSwipeCommand(browser, {elementUtils});
 
             await browser.swipe('.some-selector', 100, -200);
 
@@ -116,8 +117,8 @@ describe('"swipe" command', () => {
         });
 
         it('should execute actions in right order', async () => {
-            getElemCenterLocation.resolves({x: 200, y: 400});
-            addSwipeCommand(browser);
+            elementUtils.getElemCenterLocation.resolves({x: 200, y: 400});
+            addSwipeCommand(browser, {elementUtils});
 
             await browser.swipe('.some-selector', 10);
 
@@ -134,7 +135,7 @@ describe('"swipe" command', () => {
     });
 
     it('should reset toolbar values in test context if "yOffset" is passed', async () => {
-        addSwipeCommand(browser);
+        addSwipeCommand(browser, {elementUtils});
 
         await browser.swipe('.some-selector', 0, 100);
 
@@ -142,7 +143,7 @@ describe('"swipe" command', () => {
     });
 
     it('should not reset toolbar values in test context if "yOffset" is not passed', async () => {
-        addSwipeCommand(browser);
+        addSwipeCommand(browser, {elementUtils});
 
         await browser.swipe('.some-selector');
 
