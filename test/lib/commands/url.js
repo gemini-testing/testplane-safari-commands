@@ -58,6 +58,17 @@ describe('"url" command', () => {
         assert.callOrder(browser.execute, baseUrlFn);
     });
 
+    it('should not reject if body element does not exist on the page', async () => {
+        wrapUrlCommand_(browser);
+
+        global.document.body = null;
+        browser.execute.callsFake(() => {
+            browser.execute.firstCall.args[0]();
+        });
+
+        await assert.isFulfilled(browser.url('/?text=test'));
+    });
+
     it('should wait until request will be completed', async () => {
         wrapUrlCommand_(browser, {pageLoadTimeout: 100500});
 
