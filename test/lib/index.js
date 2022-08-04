@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const {events: {AsyncEmitter}} = require('gemini-core');
+const EventEmitter2 = require('eventemitter2');
 const proxyquire = require('proxyquire');
 
 const commands = require('lib/commands');
@@ -19,7 +19,7 @@ describe('plugin', () => {
             browsers: {}
         });
 
-        const hermione = new AsyncEmitter();
+        const hermione = new EventEmitter2();
 
         hermione.events = {
             NEW_BROWSER: 'newBrowser',
@@ -87,7 +87,7 @@ describe('plugin', () => {
                 }));
                 const browser = mkBrowser_();
 
-                await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b2'});
+                await hermione.emitAsync(hermione.events.SESSION_START, browser, {browserId: 'b2'});
 
                 assert.notCalled(browser.execute);
             });
@@ -114,7 +114,7 @@ describe('plugin', () => {
                     browser.execute.firstCall.args[0]();
                 });
 
-                await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+                await hermione.emitAsync(hermione.events.SESSION_START, browser, {browserId: 'b1'});
 
                 assert.calledWith(document.createElement, 'input');
                 assert.calledWith(fakeInput.setAttribute, 'type', 'text');
@@ -148,7 +148,7 @@ describe('plugin', () => {
                         browser[ctxsCmdName].resolves(contexts);
                         utils.isWdioLatest.returns(isWdioLatestRes);
 
-                        await hermione.emitAndWait(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+                        await hermione.emitAsync(hermione.events.SESSION_START, browser, {browserId: 'b1'});
 
                         assert.calledOnceWith(browser.extendOptions, {[WEB_VIEW_CTX]: 'WEBVIEW_12345'});
                     });
