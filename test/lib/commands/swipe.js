@@ -25,7 +25,7 @@ describe('"swipe" command', () => {
     it('should add "swipe" command', () => {
         addSwipeCommand(browser, {elementUtils});
 
-        assert.calledOnceWith(browser.addCommand, 'swipe', sinon.match.func, true);
+        assert.calledOnceWith(browser.addCommand, 'swipe', sinon.match.func);
     });
 
     it('should throw error if selector is passed as number', async () => {

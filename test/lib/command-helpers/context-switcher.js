@@ -56,8 +56,8 @@ describe('"context-switcher" helper', () => {
                 await runInContext_(browser, action);
 
                 assert.calledOnceWith(actionFn, ...action.args);
-                assert.notCalled(browser.context);
-                assert.notCalled(browser.contexts);
+                assert.notCalled(browser.getContext);
+                assert.notCalled(browser.getContexts);
             });
 
             it('should return result from calling passed action', async () => {
@@ -74,7 +74,7 @@ describe('"context-switcher" helper', () => {
             await runInContext_(browser, {args: 'foo-bar'});
 
             assert.callOrder(
-                browser.context.withArgs(NATIVE_CONTEXT),
+                browser.switchContext.withArgs(NATIVE_CONTEXT),
                 actionFn.withArgs('foo-bar')
             );
         });
@@ -86,7 +86,7 @@ describe('"context-switcher" helper', () => {
 
             assert.callOrder(
                 actionFn.withArgs('foo-bar'),
-                browser.context.withArgs('WEBVIEW_12345')
+                browser.switchContext.withArgs('WEBVIEW_12345')
             );
         });
 
@@ -123,7 +123,7 @@ describe('"context-switcher" helper', () => {
             let isNativeCtxBefore;
 
             browser.options[WEB_VIEW_CTX] = 'WEBVIEW_12345';
-            browser.context.withArgs('WEBVIEW_12345').callsFake(() => {
+            browser.switchContext.withArgs('WEBVIEW_12345').callsFake(() => {
                 isNativeCtxBefore = testCtx[IS_NATIVE_CTX];
             });
 

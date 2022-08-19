@@ -22,18 +22,20 @@ describe('"deviceClickBack" command', () => {
     it('should add command "deviceClickBack"', () => {
         addDeviceClickBack(browser, {nativeLocators});
 
-        assert.calledOnceWith(browser.addCommand, 'deviceClickBack', sinon.match.func, true);
+        assert.calledOnceWith(browser.addCommand, 'deviceClickBack', sinon.match.func);
     });
 
     it('should run "click" action with correct args in native context', async () => {
         const {DEVICE_BACK} = getNativeLocators(browser);
         addDeviceClickBack(browser, {nativeLocators});
+        const deviceBackButton = Object.assign({selector: DEVICE_BACK}, await browser.$());
+        browser.$.withArgs(DEVICE_BACK).resolves(deviceBackButton);
 
         await browser.deviceClickBack();
 
         assert.calledOnceWith(runInNativeContext,
             browser,
-            {fn: browser.click, args: [DEVICE_BACK, {unwrap: true}]}
+            {fn: sinon.match.func, args: [{unwrap: true}]}
         );
     });
 });

@@ -30,7 +30,7 @@ describe('"url" command', () => {
     it('should wrap "url" command', () => {
         wrapUrlCommand_(browser);
 
-        assert.calledOnceWith(browser.addCommand, 'url', sinon.match.func, true);
+        assert.calledOnceWith(browser.overwriteCommand, 'url', sinon.match.func);
     });
 
     it('should call base "url" command if url is not passed', async () => {
@@ -70,6 +70,8 @@ describe('"url" command', () => {
     });
 
     it('should wait until request will be completed', async () => {
+        const elem = await browser.$();
+
         wrapUrlCommand_(browser, {pageLoadTimeout: 100500});
 
         browser.waitUntil.callsFake(() => {
@@ -84,7 +86,7 @@ describe('"url" command', () => {
             100500,
             'The page did not load in 100500 ms'
         );
-        assert.calledOnceWith(browser.isVisible, 'body');
+        assert.calledOnceWith(elem.isDisplayed);
     });
 
     it('should use default "pageLoadTimeout" if it does not specified in browser config', async () => {

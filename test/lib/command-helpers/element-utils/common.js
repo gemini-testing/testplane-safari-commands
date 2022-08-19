@@ -6,13 +6,12 @@ const {BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE, PIXEL_RATIO} = require('lib/comma
 const {getNativeLocators} = require('lib/native-locators');
 
 describe('common "element-utils" helper', () => {
-    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo, isWdioLatest;
+    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo;
     let BOTTOM_TOOLBAR, WEB_VIEW;
 
     const mkUtilsStub = (nativeLocators) => {
         const CommonUtils = proxyquire('lib/command-helpers/element-utils/common', {
-            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo},
-            '../../../utils': {isWdioLatest}
+            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo}
         });
 
         sinon.stub(CommonUtils.prototype, 'getTopToolbarHeight').returns(0);
@@ -26,7 +25,6 @@ describe('common "element-utils" helper', () => {
         withExisting = sinon.stub().named('withExisting').resolves({});
         withNativeCtx = sinon.stub().named('withNativeCtx').resolves({});
         withTestCtxMemo = sinon.stub().named('withTestCtxMemo').resolves({});
-        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
         const nativeLocators = getNativeLocators(browser);
 
@@ -39,7 +37,7 @@ describe('common "element-utils" helper', () => {
 
     describe('"getBottomToolbarY" method', () => {
         it('should wrap base action to "withExisting" wrapper', async () => {
-            const action = {fn: browser.getLocation, args: BOTTOM_TOOLBAR, default: {x: 0, y: 0}};
+            const action = {fn: utils.getLocation, args: [browser, BOTTOM_TOOLBAR], default: {x: 0, y: 0}};
 
             await utils.getBottomToolbarY(browser);
 
@@ -73,7 +71,7 @@ describe('common "element-utils" helper', () => {
 
     describe('"getWebViewSize" method', () => {
         it('should wrap base action to "withNativeCtx" wrapper', async () => {
-            const action = {fn: browser.getElementSize, args: WEB_VIEW};
+            const action = {fn: utils.getElementSize, args: [browser, WEB_VIEW]};
 
             await utils.getWebViewSize(browser);
 
@@ -99,32 +97,26 @@ describe('common "element-utils" helper', () => {
 
     describe('"getElemCoords" method', () => {
         it('should return element coords', async () => {
-            browser.getElementSize.withArgs('some-selector').returns({width: 10, height: 20});
-            browser.getLocation.withArgs('some-selector').returns({x: 1, y: 2});
+            const elementStub = {
+                selector: '.selector',
+                getSize: () => ({width: 10, height: 20}),
+                getLocation: () => ({x: 1, y: 2})
+            };
+            browser.$.withArgs('.selector').returns(elementStub);
 
-            const coords = await utils.getElemCoords(browser, 'some-selector');
+            const coords = await utils.getElemCoords(browser, '.selector');
 
             assert.deepEqual(coords, {width: 10, height: 20, x: 1, y: 2});
         });
 
-        // wdio returns elements in reverse order, so we need to take last element in array to pick first element on the page
-        // https://github.com/webdriverio/webdriverio/blob/v4.14.1/lib/commands/getLocation.js#L48.
-        it('should return coords of last found element', async () => {
-            browser.getElementSize.withArgs('some-selector').returns(
-                [{width: 10, height: 20}, {width: 100, height: 200}]
-            );
-            browser.getLocation.withArgs('some-selector').returns(
-                [{x: 1, y: 2}, {x: 11, y: 22}]
-            );
-
-            const coords = await utils.getElemCoords(browser, 'some-selector');
-
-            assert.deepEqual(coords, {width: 10, height: 20, x: 11, y: 22});
-        });
-
         it('should increase y coordinate on top toolbar height', async () => {
             utils.getTopToolbarHeight.returns(10);
-            browser.getLocation.withArgs('some-selector').returns({x: 1, y: 2});
+            const elementStub = {
+                selector: 'some-selector',
+                getLocation: () => ({x: 1, y: 2}),
+                getSize: () => ({})
+            };
+            browser.$.withArgs('some-selector').returns(elementStub);
 
             const coords = await utils.getElemCoords(browser, 'some-selector');
 
@@ -134,12 +126,12 @@ describe('common "element-utils" helper', () => {
 
     describe('"getElemCenterLocation" method', () => {
         it('should return center coords of passed selector', async () => {
-            browser.getElementSize.withArgs('some-selector').returns(
-                [{width: 10, height: 20}]
-            );
-            browser.getLocation.withArgs('some-selector').returns(
-                [{x: 1.1, y: 2.9}]
-            );
+            const elementStub = {
+                selector: 'some-selector',
+                getLocation: () => ({x: 1.1, y: 2.9}),
+                getSize: () => ({width: 10, height: 20})
+            };
+            browser.$.withArgs('some-selector').returns(elementStub);
 
             const coords = await utils.getElemCenterLocation(browser, 'some-selector');
             assert.deepEqual(coords, {x: 6, y: 13});
@@ -154,23 +146,15 @@ describe('common "element-utils" helper', () => {
             assert.calledOnceWith(withTestCtxMemo, {fn: sinon.match.func}, PIXEL_RATIO);
         });
 
-        [
-            {name: 'latest', executeRes: 100500, isWdioLatestRes: true},
-            {name: 'old', executeRes: {value: 100500}, isWdioLatestRes: false}
-        ].forEach(({name, executeRes, isWdioLatestRes}) => {
-            describe(`executed with ${name} wdio`, () => {
-                it('should return pixel ratio from wrapped action', async () => {
-                    browser.execute.resolves(executeRes);
-                    isWdioLatest.returns(isWdioLatestRes);
+        it('should return pixel ratio from wrapped action', async () => {
+            browser.execute.resolves(100500);
 
-                    await utils.getPixelRatio(browser);
+            await utils.getPixelRatio(browser);
 
-                    const baseAction = withTestCtxMemo.firstCall.args[0];
-                    const pixelRatio = await baseAction.fn();
+            const baseAction = withTestCtxMemo.firstCall.args[0];
+            const pixelRatio = await baseAction.fn();
 
-                    assert.equal(pixelRatio, 100500);
-                });
-            });
+            assert.equal(pixelRatio, 100500);
         });
     });
 

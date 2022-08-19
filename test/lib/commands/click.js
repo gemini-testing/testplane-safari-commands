@@ -1,36 +1,48 @@
 'use strict';
 
-const addClickCommand = require('lib/commands/click');
+const overwriteClickCommand = require('lib/commands/click');
 const {mkBrowser_} = require('../../utils');
 
 describe('"click" command', () => {
-    it('should add "click" command', () => {
+    it('should overwrite "click" command', () => {
         const browser = mkBrowser_();
 
-        addClickCommand(browser);
+        overwriteClickCommand(browser);
 
-        assert.calledOnceWith(browser.addCommand, 'click', sinon.match.func, true);
+        assert.calledOnceWith(browser.overwriteCommand, 'click', sinon.match.func, true);
+    });
+
+    it('should overwrite browser.click, if exists', () => {
+        const browser = mkBrowser_();
+        browser.click = () => {};
+
+        overwriteClickCommand(browser);
+
+        assert.calledTwice(browser.overwriteCommand);
+        assert.calledWithExactly(browser.overwriteCommand, 'click', sinon.match.func);
     });
 
     it('should pass through control to the "touch" command', async () => {
         const browser = mkBrowser_();
 
-        addClickCommand(browser);
+        overwriteClickCommand(browser);
 
-        await browser.click('.some-selector');
+        const elem = await browser.$();
+        await elem.click();
 
-        assert.calledOnceWith(browser.touch, '.some-selector');
+        assert.calledOnce(elem.touch);
     });
 
     it('should call base click-command if "unwrap" option is specified', async () => {
         const browser = mkBrowser_();
-        const baseClick = browser.click;
 
-        addClickCommand(browser);
+        const elem = await browser.$('.some-selector');
+        const baseClick = elem.click;
+        overwriteClickCommand(browser);
 
-        await browser.click('some-selector', {unwrap: true});
+        await elem.click({unwrap: true});
 
-        assert.calledOnceWith(baseClick, 'some-selector');
-        assert.notCalled(browser.touch);
+        assert.calledOnce(baseClick);
+        assert.notCalled(elem.touch);
     });
 });
