@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.6...v1.0.0) (2022-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* drop support for hermione@3
+
+### Features
+
+* migrate to webdriverio@7 ([6de8d7f](https://github.com/gemini-testing/hermione-safari-commands/commit/6de8d7fcf016bd66c532b66087bc67f0cd48337b))
+
 ### [0.4.6](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.5...v0.4.6) (2022-02-28)
 
 
