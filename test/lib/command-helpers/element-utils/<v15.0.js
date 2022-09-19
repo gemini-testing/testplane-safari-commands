@@ -4,13 +4,12 @@ const {getNativeLocators} = require('lib/native-locators');
 const {TOP_TOOLBAR_SIZE} = require('lib/command-helpers/test-context');
 
 describe('old-safari "element-utils"', () => {
-    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo, isWdioLatest;
+    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo;
     let TOP_TOOLBAR;
 
     const mkUtilsStub = (nativeLocators) => {
         const SafariOldUtils = proxyquire('lib/command-helpers/element-utils/<v15.0', {
-            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo},
-            '../../../utils': {isWdioLatest}
+            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo}
         });
 
         return new SafariOldUtils(nativeLocators);
@@ -22,7 +21,6 @@ describe('old-safari "element-utils"', () => {
         withExisting = sinon.stub().named('withExisting').resolves({});
         withNativeCtx = sinon.stub().named('withNativeCtx').resolves({});
         withTestCtxMemo = sinon.stub().named('withTestCtxMemo').resolves({});
-        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
         const nativeLocators = getNativeLocators(browser);
 
@@ -34,7 +32,7 @@ describe('old-safari "element-utils"', () => {
 
     describe('"getTopToolbarHeight" method', () => {
         it('should wrap base action to "withExisting" wrapper', async () => {
-            const action = {fn: browser.getElementSize, args: TOP_TOOLBAR, default: {width: 0, height: 0}};
+            const action = {fn: utils.getElementSize, args: [browser, TOP_TOOLBAR], default: {width: 0, height: 0}};
 
             await utils.getTopToolbarHeight(browser);
 

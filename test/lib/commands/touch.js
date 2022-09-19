@@ -21,12 +21,24 @@ describe('"touch" command', () => {
         assert.calledOnceWith(browser.addCommand, 'touch', sinon.match.func, true);
     });
 
+    it('should overwrite browser.touch, if exists', () => {
+        const browser = mkBrowser_();
+        browser.touch = () => {};
+
+        addTouchCommand(browser, {elementUtils});
+
+        assert.calledOnce(browser.addCommand);
+        assert.calledOnce(browser.overwriteCommand);
+        assert.calledWithExactly(browser.overwriteCommand, 'touch', sinon.match.func);
+    });
+
     it('should get center location of the passed selector', async () => {
         addTouchCommand(browser, {elementUtils});
 
-        await browser.touch('.some-selector');
+        const elem = await browser.$('.selector');
+        await elem.touch();
 
-        assert.calledOnceWith(elementUtils.getElemCenterLocation, browser, '.some-selector');
+        assert.calledOnceWith(elementUtils.getElemCenterLocation, browser, '.selector');
     });
 
     describe('perform touch action', () => {
@@ -34,7 +46,8 @@ describe('"touch" command', () => {
             elementUtils.getElemCenterLocation.resolves({x: 100, y: 500});
             addTouchCommand(browser, {elementUtils});
 
-            await browser.touch('.some-selector');
+            const elem = Object.assign({selector: '.some-selector'}, await browser.$());
+            await elem.touch();
 
             assert.calledOnceWith(
                 browser.touchAction,

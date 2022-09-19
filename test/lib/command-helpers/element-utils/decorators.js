@@ -27,18 +27,20 @@ describe('"element-utils" decorators', () => {
                 {name: 'action args passed as array of strings', args: ['some-locator']}
             ].forEach(({name, args}) => {
                 it(`${name}`, async () => {
+                    const elem = await browser.$();
                     const action = {fn: actionFn, args};
 
                     await decorators.withExisting.call(browser, action);
 
-                    assert.calledOnceWith(browser.isExisting, 'some-locator');
+                    assert.calledOnceWith(elem.isExisting);
                 });
             });
         });
 
         describe('element does not exist', () => {
             it('should return default value if element does not exist', async () => {
-                browser.isExisting.resolves(false);
+                const elem = await browser.$();
+                elem.isExisting.resolves(false);
                 const defaultValue = {width: 0, height: 0};
                 const action = {fn: actionFn, args: 'some-locator', default: defaultValue};
 
@@ -48,7 +50,8 @@ describe('"element-utils" decorators', () => {
             });
 
             it('should not call passed action', async () => {
-                browser.isExisting.resolves(false);
+                const elem = await browser.$();
+                elem.isExisting.resolves(false);
                 const action = {fn: actionFn, args: 'some-locator'};
 
                 await decorators.withExisting.call(browser, action);
@@ -59,7 +62,8 @@ describe('"element-utils" decorators', () => {
 
         describe('element exists', () => {
             it('should call passed action', async () => {
-                browser.isExisting.resolves(true);
+                const elem = await browser.$();
+                elem.isExisting.resolves(true);
                 const action = {fn: actionFn, args: 'some-locator'};
 
                 await decorators.withExisting.call(browser, action);
@@ -69,7 +73,8 @@ describe('"element-utils" decorators', () => {
             });
 
             it('should return result from calling passed action', async () => {
-                browser.isExisting.resolves(true);
+                const elem = await browser.$();
+                elem.isExisting.resolves(true);
                 actionFn.resolves({foo: 'bar'});
                 const action = {fn: actionFn, args: 'some-locator'};
 

@@ -5,76 +5,62 @@ const {mkBrowser_} = require('../../utils');
 const {TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE} = require('lib/command-helpers/test-context');
 
 describe('"orientation" command', () => {
-    let browser, addOrientationCommand, resetTestContextValues, isWdioLatest;
+    let browser, overwriteOrientationCommand, resetTestContextValues;
 
     beforeEach(() => {
         browser = mkBrowser_();
         resetTestContextValues = sinon.stub().named('resetTestContextValues');
-        isWdioLatest = sinon.stub().named('isWdioLatest').returns(false);
 
-        addOrientationCommand = proxyquire('lib/commands/orientation', {
-            '../command-helpers/test-context': {resetTestContextValues},
-            '../utils': {isWdioLatest}
+        overwriteOrientationCommand = proxyquire('lib/commands/orientation', {
+            '../command-helpers/test-context': {resetTestContextValues}
         });
     });
 
     afterEach(() => sinon.restore());
 
-    [
-        {name: 'latest', cmdName: 'setOrientation', isWdioLatestRes: true},
-        {name: 'old', cmdName: 'orientation', isWdioLatestRes: false}
-    ].forEach(({name, cmdName, isWdioLatestRes}) => {
-        describe(`executed with ${name} wdio`, () => {
-            beforeEach(() => {
-                isWdioLatest.returns(isWdioLatestRes);
-            });
+    it('should overwrite "setOrientation" command', () => {
+        overwriteOrientationCommand(browser);
 
-            it(`should add "${cmdName}" command`, () => {
-                addOrientationCommand(browser);
+        assert.calledOnceWith(browser.overwriteCommand, 'setOrientation', sinon.match.func);
+    });
 
-                assert.calledOnceWith(browser.addCommand, cmdName, sinon.match.func, true);
-            });
+    it('should pass through call to base "setOrientation" command', async () => {
+        const baseOrientationFn = browser.setOrientation;
+        overwriteOrientationCommand(browser);
 
-            it(`should pass through call to base "${cmdName}" command`, async () => {
-                const baseOrientationFn = browser[cmdName];
-                addOrientationCommand(browser);
+        await browser.setOrientation('portrait');
 
-                await browser[cmdName]('portrait');
+        assert.calledOnceWith(baseOrientationFn, 'portrait');
+    });
 
-                assert.calledOn(baseOrientationFn, browser);
-                assert.calledOnceWith(baseOrientationFn, 'portrait');
-            });
+    it('should reset toolbar and web view values in test context if "setOrientation" is passed', async () => {
+        overwriteOrientationCommand(browser);
 
-            it(`should reset toolbar and web view values in test context if "${cmdName}" is passed`, async () => {
-                addOrientationCommand(browser);
+        await browser.setOrientation('landscape');
 
-                await browser[cmdName]('landscape');
+        assert.calledOnceWith(
+            resetTestContextValues,
+            browser.executionContext,
+            [TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE]
+        );
+    });
 
-                assert.calledOnceWith(
-                    resetTestContextValues,
-                    browser.executionContext,
-                    [TOP_TOOLBAR_SIZE, BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE]
-                );
-            });
+    describe('should not reset toolbar and web view values in test context if', () => {
+        it('"setOrientation" is not passed', async () => {
+            overwriteOrientationCommand(browser);
 
-            describe('should not reset toolbar and web view values in test context if', () => {
-                it(`"${cmdName}" is not passed`, async () => {
-                    addOrientationCommand(browser);
+            await browser.setOrientation();
 
-                    await browser[cmdName]();
+            assert.notCalled(resetTestContextValues);
+        });
 
-                    assert.notCalled(resetTestContextValues);
-                });
+        it('"browser.executionContext" is not inited yet', async () => {
+            browser.executionContext = undefined;
+            overwriteOrientationCommand(browser);
 
-                it('"browser.executionContext" is not inited yet', async () => {
-                    browser.executionContext = undefined;
-                    addOrientationCommand(browser);
+            await browser.setOrientation('landscape');
 
-                    await browser[cmdName]('landscape');
-
-                    assert.notCalled(resetTestContextValues);
-                });
-            });
+            assert.notCalled(resetTestContextValues);
         });
     });
 });

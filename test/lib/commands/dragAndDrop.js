@@ -16,18 +16,19 @@ describe('"dragAndDrop" command', () => {
 
     afterEach(() => sinon.restore());
 
-    it('should add "dragAndDrop" command', () => {
+    it('should overwrite "dragAndDrop" command', () => {
         addDragAndDropCommand(browser, {elementUtils});
 
-        assert.calledOnceWith(browser.addCommand, 'dragAndDrop', sinon.match.func, true);
+        assert.calledOnceWith(browser.overwriteCommand, 'dragAndDrop', sinon.match.func, true);
     });
 
     it('should get center location of the source and destination selectors', async () => {
         addDragAndDropCommand(browser, {elementUtils});
 
-        await browser.dragAndDrop('.src-selector', '.dest-selector');
+        const elem = await browser.$('.selector');
+        await elem.dragAndDrop('.dest-selector');
 
-        assert.calledWith(elementUtils.getElemCenterLocation.firstCall, browser, '.src-selector');
+        assert.calledWith(elementUtils.getElemCenterLocation.firstCall, browser, '.selector');
         assert.calledWith(elementUtils.getElemCenterLocation.secondCall, browser, '.dest-selector');
     });
 
@@ -38,7 +39,8 @@ describe('"dragAndDrop" command', () => {
                 .onSecondCall().resolves({x: 300, y: 400});
             addDragAndDropCommand(browser, {elementUtils});
 
-            await browser.dragAndDrop('.src-selector', '.dest-selector');
+            const elem = Object.assign({selector: '.src-selector'}, await browser.$());
+            await elem.dragAndDrop('.dest-selector');
 
             assert.calledOnceWith(
                 browser.touchAction,

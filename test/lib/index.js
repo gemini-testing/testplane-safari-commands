@@ -5,7 +5,6 @@ const EventEmitter2 = require('eventemitter2');
 const proxyquire = require('proxyquire');
 
 const commands = require('lib/commands');
-const utils = require('lib/utils');
 const {NATIVE_CONTEXT} = require('lib/constants');
 const {WEB_VIEW_CTX} = require('lib/command-helpers/test-context');
 const {mkConfig_, mkBrowser_} = require('../utils');
@@ -35,8 +34,6 @@ describe('plugin', () => {
     };
 
     beforeEach(() => {
-        sinon.stub(utils, 'isWdioLatest').returns(false);
-
         Object.keys(commands).forEach((command) => {
             commands[command] = sinon.stub();
         });
@@ -122,37 +119,23 @@ describe('plugin', () => {
                 assert.callOrder(fakeInput.setAttribute, global.document.body.append, fakeInput.focus);
             });
 
-            [
-                {
-                    name: 'latest', contexts: [NATIVE_CONTEXT, 'WEBVIEW_12345'],
-                    ctxsCmdName: 'getContexts', isWdioLatestRes: true
-                },
-                {
-                    name: 'old', contexts: {value: [NATIVE_CONTEXT, 'WEBVIEW_12345']},
-                    ctxsCmdName: 'contexts', isWdioLatestRes: false
-                }
-            ].forEach(({name, contexts, ctxsCmdName, isWdioLatestRes}) => {
-                describe(`executed with ${name} wdio`, () => {
-                    it('should save web view context in session options', async () => {
-                        const hermione = mkHermione_({proc: 'master'});
+            it('should save web view context in session options', async () => {
+                const hermione = mkHermione_({proc: 'master'});
 
-                        plugin(hermione, mkConfig_({
-                            browsers: {
-                                b1: {
-                                    commands: []
-                                }
-                            }
-                        }));
+                plugin(hermione, mkConfig_({
+                    browsers: {
+                        b1: {
+                            commands: []
+                        }
+                    }
+                }));
 
-                        const browser = mkBrowser_();
-                        browser[ctxsCmdName].resolves(contexts);
-                        utils.isWdioLatest.returns(isWdioLatestRes);
+                const browser = mkBrowser_();
+                browser.getContexts.resolves([NATIVE_CONTEXT, 'WEBVIEW_12345']);
 
-                        await hermione.emitAsync(hermione.events.SESSION_START, browser, {browserId: 'b1'});
+                await hermione.emitAsync(hermione.events.SESSION_START, browser, {browserId: 'b1'});
 
-                        assert.calledOnceWith(browser.extendOptions, {[WEB_VIEW_CTX]: 'WEBVIEW_12345'});
-                    });
-                });
+                assert.calledOnceWith(browser.extendOptions, {[WEB_VIEW_CTX]: 'WEBVIEW_12345'});
             });
         });
     });
@@ -369,7 +352,7 @@ describe('plugin', () => {
                 const beforeEachHook = rootSuite.beforeEach.lastCall.args[0];
                 await beforeEachHook.call({browser});
 
-                assert.calledOnceWith(browser.context, 'WEBVIEW_12345');
+                assert.calledOnceWith(browser.switchContext, 'WEBVIEW_12345');
             });
         });
     });

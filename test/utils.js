@@ -18,30 +18,40 @@ exports.matchElemArrayByIndex_ = ({index, value}) => (refValue) => {
 
 exports.mkBrowser_ = (desiredCapabilities = {}) => {
     const session = Promise.resolve();
+    const element = {
+        selector: '.selector',
+        click: sinon.stub().named('click').resolves(),
+        touch: sinon.stub().named('touch').resolves(),
+        getSize: sinon.stub().named('getSize').resolves({}),
+        isDisplayed: sinon.stub().named('isDisplayed').resolves(),
+        isExisting: sinon.stub().named('isExisting').resolves(false)
+    };
 
     session.executionContext = {};
     session.url = sinon.stub().named('url').resolves();
-    session.click = sinon.stub().named('click').resolves();
-    session.touch = sinon.stub().named('touch').resolves();
     session.touchAction = sinon.stub().named('touchAction').resolves();
-    session.getElementSize = sinon.stub().named('getElementSize').resolves({});
-    session.getLocation = sinon.stub().named('getLocation').resolves({});
-    session.context = sinon.stub().named('context').resolves({value: 'default-ctx'});
-    session.contexts = sinon.stub().named('contexts').resolves({value: ['default-ctx-1', 'default-ctx-2']});
+    session.getContext = sinon.stub().named('getContext').resolves({value: 'default-ctx'});
+    session.switchContext = sinon.stub().named('switchContext').resolves();
     session.getContexts = sinon.stub().named('getContexts').resolves({value: ['default-ctx-1', 'default-ctx-2']});
     session.execute = sinon.stub().named('execute').resolves();
     session.waitUntil = sinon.stub().named('waitUntil').resolves();
-    session.isVisible = sinon.stub().named('isVisible').resolves();
-    session.isExisting = sinon.stub().named('isExisting').resolves(false);
-    session.orientation = sinon.stub().named('orientation').resolves({value: 'default-orientation'});
     session.setOrientation = sinon.stub().named('setOrientation').resolves('default-orientation');
-    session.screenshot = sinon.stub().named('screenshot').resolves({value: 'default-base64'});
     session.takeScreenshot = sinon.stub().named('takeScreenshot').resolves('default-base64');
     session.extendOptions = sinon.stub().named('extendOptions').resolves();
+    session.$ = sinon.stub().named('$').resolves(element);
 
-    session.addCommand = sinon.stub().callsFake((name, command) => {
-        session[name] = command;
-        sinon.spy(session, name);
+    session.addCommand = sinon.stub().callsFake((name, command, isElement) => {
+        const target = isElement ? element : session;
+
+        target[name] = command.bind(target);
+        sinon.spy(target, name);
+    });
+
+    session.overwriteCommand = sinon.stub().callsFake((name, command, isElement) => {
+        const target = isElement ? element : session;
+
+        target[name] = command.bind(target, target[name]);
+        sinon.spy(target, name);
     });
 
     session.desiredCapabilities = Object.assign({version: '13.0'}, desiredCapabilities);
