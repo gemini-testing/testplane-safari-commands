@@ -1,46 +1,34 @@
 'use strict';
 
-const {PassThrough} = require('stream');
-const {PNG} = require('pngjs');
-const concat = require('concat-stream');
-const streamifier = require('streamifier');
 const proxyquire = require('proxyquire');
 
 const {getElementUtils} = require('lib/command-helpers/element-utils');
 const {mkBrowser_} = require('../../utils');
 
 describe('"screenshot" command', () => {
-    let wrapScreenshotCommand, browser, pngCtor, runInNativeContext, elementUtils;
+    let wrapScreenshotCommand, browser, runInNativeContext, elementUtils, mockedSharp, mkSharpInstance;
 
-    const mkReadStream_ = ({chunk} = {}) => {
-        const mockReadStream = new PassThrough();
+    const mkSharpStub_ = () => {
+        const stub = {};
+        stub.toBuffer = sinon.stub().resolves(Buffer.from('default-data'));
+        stub.extract = sinon.stub().returns(stub);
 
-        chunk && mockReadStream.push(chunk);
-        mockReadStream.end();
-
-        return mockReadStream;
+        return stub;
     };
 
     beforeEach(() => {
         browser = mkBrowser_();
-        pngCtor = sinon.stub().named('pngCtor');
-        runInNativeContext = sinon.stub().named('runInNativeContext').returns({});
+        runInNativeContext = sinon.stub().resolves({});
         elementUtils = getElementUtils(browser);
+        mockedSharp = mkSharpStub_();
+        mkSharpInstance = sinon.stub().callsFake(() => mockedSharp);
 
         wrapScreenshotCommand = proxyquire('lib/commands/screenshot', {
-            pngjs: {PNG: pngCtor.returns(Object.create(PNG.prototype))},
-            '../command-helpers/context-switcher': {runInNativeContext}
+            '../command-helpers/context-switcher': {runInNativeContext},
+            sharp: mkSharpInstance
         });
 
-        sinon.stub(elementUtils, 'calcWebViewCoords').named('calcWebViewCoords');
-        sinon.stub(elementUtils, 'getPixelRatio').named('getPixelRatio').returns(1);
-
-        sinon.stub(PNG.prototype, 'bitblt');
-        sinon.stub(PNG.prototype, 'end');
-        sinon.stub(PNG.prototype, 'pack').returns(mkReadStream_({chunk: 'default-data'}));
-        sinon.stub(PNG.prototype, 'write').callsFake(function(val) {
-            this.emit('parsed', val);
-        });
+        sinon.stub(elementUtils, 'calcWebViewCoords');
     });
 
     afterEach(() => sinon.restore());
@@ -55,20 +43,17 @@ describe('"screenshot" command', () => {
         const buf = Buffer.from('screenshot-data');
         const baseTakeScreenshotFn = browser.takeScreenshot.resolves(buf.toString('base64'));
 
-        sinon.spy(streamifier, 'createReadStream');
         wrapScreenshotCommand(browser, {elementUtils});
 
         await browser.takeScreenshot();
 
-        assert.callOrder(baseTakeScreenshotFn, streamifier.createReadStream.withArgs(buf));
+        assert.callOrder(baseTakeScreenshotFn, mockedSharp.extract);
     });
 
     it('should convert destination png data to base64 buffer', async () => {
         const buf = Buffer.from('screenshot-data');
+        mockedSharp.toBuffer.resolves(buf);
         const base64Buf = buf.toString('base64');
-        browser.takeScreenshot.resolves(base64Buf);
-
-        PNG.prototype.pack.returns(mkReadStream_({chunk: buf}));
         wrapScreenshotCommand(browser, {elementUtils});
 
         const result = await browser.takeScreenshot();
@@ -76,53 +61,39 @@ describe('"screenshot" command', () => {
         assert.equal(result, base64Buf);
     });
 
-    describe('should handle the error if', () => {
-        it('converting image buffer to readable stream is failed', async () => {
-            const readStream = new PassThrough();
-            sinon.stub(readStream, '_read').callsFake(() => readStream.emit('error', new Error('o.O')));
-            sinon.stub(streamifier, 'createReadStream').returns(readStream);
+    it('should extract image with correct coords', async () => {
+        const coords = {left: 0, top: 0, width: 2, height: 2};
+        runInNativeContext.resolves(coords);
+        wrapScreenshotCommand(browser, {elementUtils});
 
-            wrapScreenshotCommand(browser, {elementUtils});
+        await browser.takeScreenshot();
 
-            await assert.isRejected(browser.takeScreenshot(), 'Error occured while converting buffer to readable stream: o.O');
+        assert.calledOnceWith(mockedSharp.extract, coords);
+    });
+
+    it('should take into a count pixel ratio and body width', async () => {
+        const pixelRatio = 1;
+        const bodyWidth = 200;
+        sinon.stub(elementUtils, 'getPixelRatio').returns(pixelRatio);
+        sinon.stub(elementUtils, 'getElementSize').resolves({
+            width: bodyWidth
         });
 
-        it('writing image buffer to png data is failed', async () => {
-            const writeStream = new PassThrough();
-            sinon.stub(writeStream, '_write').callsFake(() => writeStream.emit('error', new Error('o.O')));
-            pngCtor.onFirstCall().returns(writeStream);
+        wrapScreenshotCommand(browser, {elementUtils});
 
-            wrapScreenshotCommand(browser, {elementUtils});
+        await browser.takeScreenshot();
 
-            await assert.isRejected(browser.takeScreenshot(), 'Error occured while writing buffer to png data: o.O');
+        assert.deepEqual(runInNativeContext.args[0][1]['args'][1], {
+            bodyWidth,
+            pixelRatio
         });
+    });
 
-        it('copying pixels from source to destination png', async () => {
-            PNG.prototype.bitblt.throws(new Error('o.O'));
+    it('should throw error if extract with wrong params', async () => {
+        mockedSharp.extract.throws('o.O');
 
-            wrapScreenshotCommand(browser, {elementUtils});
+        wrapScreenshotCommand(browser, {elementUtils});
 
-            await assert.isRejected(browser.takeScreenshot(), 'Error occured while copying pixels from source to destination png: o.O');
-        });
-
-        it('packing png data to buffer is failed', async () => {
-            const readStream = new PassThrough();
-            sinon.stub(readStream, '_read').callsFake(() => readStream.emit('error', new Error('o.O')));
-            PNG.prototype.pack.returns(readStream);
-
-            wrapScreenshotCommand(browser, {elementUtils});
-
-            await assert.isRejected(browser.takeScreenshot(), 'Error occured while packing png data to buffer: o.O');
-        });
-
-        it('concatenating png data to a single buffer is failed', async () => {
-            sinon.stub(concat.prototype, '_write').callsFake(function() {
-                this.emit('error', new Error('o.O'));
-            });
-
-            wrapScreenshotCommand(browser, {elementUtils});
-
-            await assert.isRejected(browser.takeScreenshot(), 'Error occured while concatenating png data to a single buffer: o.O');
-        });
+        await assert.isRejected(browser.takeScreenshot(), 'Failed to take screenshot: o.O');
     });
 });
