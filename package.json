@@ -10,7 +10,7 @@
     "release": "standard-version"
   },
   "engines": {
-    "node": ">= 8.0.0"
+    "node": ">= 16.0.0"
   },
   "repository": {
     "type": "git",
@@ -29,11 +29,9 @@
   },
   "homepage": "https://github.com/gemini-testing/hermione-safari-commands#readme",
   "dependencies": {
-    "concat-stream": "^2.0.0",
     "gemini-configparser": "^1.0.0",
     "lodash": "^4.17.15",
-    "pngjs": "^5.0.0",
-    "streamifier": "^0.1.1"
+    "sharp": "~0.31.3"
   },
   "devDependencies": {
     "app-module-path": "^2.2.0",
