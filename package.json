@@ -1,6 +1,6 @@
 {
   "name": "hermione-safari-commands",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Plugin for hermione to add/wrap browser commands for iOS safari",
   "main": "lib/index.js",
   "scripts": {

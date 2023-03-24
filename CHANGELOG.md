@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v1.0.0...v2.0.0) (2023-03-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* node versions less than 16.0.0 are no longer supported
+
+### Features
+
+* drop node versions less than 16 ([aa087c9](https://github.com/gemini-testing/hermione-safari-commands/commit/aa087c9e24bf809fd94ebda98d86ed82bade25de))
+* switch from pngjs to sharp ([8e8c389](https://github.com/gemini-testing/hermione-safari-commands/commit/8e8c3897ab903b5bd48e124c2b8fff424bc49db1))
+
 ## [1.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v0.4.6...v1.0.0) (2022-09-19)
 
 
