@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [2.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v1.0.0...v2.0.0) (2023-03-24)
+## [2.1.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v2.0.0...v2.1.0) (2024-04-08)
+
+### Features
+
+* add nativeElementsSize options ([56a7091](https://github.com/gemini-testing/hermione-safari-commands/commit/56a709156eff4ba761793feaefc154cb6f2aeba7))
+
+## [2.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v2.0.0...v2.0.0) (2023-03-24)
 
 
 ### ⚠ BREAKING CHANGES
