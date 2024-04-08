@@ -1,6 +1,6 @@
 {
   "name": "@testplane/safari-commands",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Plugin for Testplane to add/wrap browser commands for iOS safari",
   "main": "lib/index.js",
   "scripts": {
