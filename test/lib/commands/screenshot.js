@@ -6,7 +6,7 @@ const {getElementUtils} = require('lib/command-helpers/element-utils');
 const {mkBrowser_} = require('../../utils');
 
 describe('"screenshot" command', () => {
-    let wrapScreenshotCommand, browser, runInNativeContext, elementUtils, mockedSharp, mkSharpInstance;
+    let wrapScreenshotCommand, browser, calcWebViewCoordsStub, elementUtils, mockedSharp, mkSharpInstance;
 
     const mkSharpStub_ = () => {
         const stub = {};
@@ -18,17 +18,15 @@ describe('"screenshot" command', () => {
 
     beforeEach(() => {
         browser = mkBrowser_();
-        runInNativeContext = sinon.stub().resolves({});
         elementUtils = getElementUtils(browser);
         mockedSharp = mkSharpStub_();
         mkSharpInstance = sinon.stub().callsFake(() => mockedSharp);
 
         wrapScreenshotCommand = proxyquire('lib/commands/screenshot', {
-            '../command-helpers/context-switcher': {runInNativeContext},
             sharp: mkSharpInstance
         });
 
-        sinon.stub(elementUtils, 'calcWebViewCoords');
+        calcWebViewCoordsStub = sinon.stub(elementUtils, 'calcWebViewCoords');
     });
 
     afterEach(() => sinon.restore());
@@ -63,7 +61,7 @@ describe('"screenshot" command', () => {
 
     it('should extract image with correct coords', async () => {
         const coords = {left: 0, top: 0, width: 2, height: 2};
-        runInNativeContext.resolves(coords);
+        calcWebViewCoordsStub.resolves(coords);
         wrapScreenshotCommand(browser, {elementUtils});
 
         await browser.takeScreenshot();
@@ -83,7 +81,7 @@ describe('"screenshot" command', () => {
 
         await browser.takeScreenshot();
 
-        assert.deepEqual(runInNativeContext.args[0][1]['args'][1], {
+        assert.deepEqual(calcWebViewCoordsStub.args[0][1], {
             bodyWidth,
             pixelRatio
         });

@@ -20,6 +20,17 @@ Plugin has following configuration:
 * **enabled** (optional) `Boolean` – enable/disable the plugin, by default plugin is enabled;
 * **browsers** (required) `Object` - the list of browsers to use for wrap commands;
   * **commands** (required) `Array` - commands which will be wrapped.
+  * **nativeElementsSize** (optional) `Object` - the map of native elements sizes for the browser. Sizes in pixels without counting the pixel ratio. Can be used in order to speed up taking screenshots;
+    * **topToolbar** (required) `Object` - the size of the top toolbar;
+      * **width** (required) `Number` - the width of the top toolbar;
+      * **height** (required) `Number` - the height of the top toolbar;
+    * **bottomToolbar** (required) `Object` - the size of the bottom toolbar;
+      * **width** (required) `Number` - the width of the bottom toolbar;
+      * **height** (required) `Number` - the height of the bottom toolbar;
+    * **webview** (required) `Object` - the size of the webview;
+      * **width** (required) `Number` - the width of the webview;
+      * **height** (required) `Number` - the height of the webview;
+
 
 Also there is ability to override plugin parameters by CLI options or environment variables
 (see [configparser](https://github.com/gemini-testing/configparser)).
@@ -44,7 +55,21 @@ module.exports = {
                             'swipe',
                             'touch',
                             'dragAndDrop'
-                        ]
+                        ],
+                        nativeElementsSize: {
+                            topToolbar: {
+                                height: 47,
+                                width: 390
+                            },
+                            bottomToolbar: {
+                                height: 113,
+                                width: 390
+                            },
+                            webview: {
+                                height: 654,
+                                width: 390
+                            }
+                        }
                     }
                 }
             }

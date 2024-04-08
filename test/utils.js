@@ -39,6 +39,7 @@ exports.mkBrowser_ = (desiredCapabilities = {}) => {
     session.takeScreenshot = sinon.stub().named('takeScreenshot').resolves('default-base64');
     session.extendOptions = sinon.stub().named('extendOptions').resolves();
     session.$ = sinon.stub().named('$').resolves(element);
+    session.getOrientation = sinon.stub().named('getOrientation').resolves('default-orientation');
 
     session.addCommand = sinon.stub().callsFake((name, command, isElement) => {
         const target = isElement ? element : session;
