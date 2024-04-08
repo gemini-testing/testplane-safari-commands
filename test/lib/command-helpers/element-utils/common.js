@@ -6,22 +6,23 @@ const {BOTTOM_TOOLBAR_LOCATION, WEB_VIEW_SIZE, PIXEL_RATIO} = require('lib/comma
 const {getNativeLocators} = require('lib/native-locators');
 
 describe('common "element-utils" helper', () => {
-    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo;
+    let browser, utils, withExisting, withNativeCtx, withTestCtxMemo, runInNativeContext;
     let BOTTOM_TOOLBAR, WEB_VIEW;
 
-    const mkUtilsStub = (nativeLocators) => {
+    const mkUtilsStub = (nativeLocators, nativeElementsSize) => {
         const CommonUtils = proxyquire('lib/command-helpers/element-utils/common', {
-            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo}
+            '../decorators': {withExisting, withNativeCtx, withTestCtxMemo},
+            '../../context-switcher': {runInNativeContext}
         });
 
         sinon.stub(CommonUtils.prototype, 'getTopToolbarHeight').returns(0);
 
-        return new CommonUtils(nativeLocators);
+        return new CommonUtils(nativeLocators, nativeElementsSize);
     };
 
     beforeEach(() => {
         browser = mkBrowser_();
-
+        runInNativeContext = sinon.stub().resolves({});
         withExisting = sinon.stub().named('withExisting').resolves({});
         withNativeCtx = sinon.stub().named('withNativeCtx').resolves({});
         withTestCtxMemo = sinon.stub().named('withTestCtxMemo').resolves({});
@@ -158,7 +159,7 @@ describe('common "element-utils" helper', () => {
         });
     });
 
-    describe('"calcWebViewCoords" method', () => {
+    describe('"calcWebViewCoordsNative" method', () => {
         beforeEach(() => {
             sinon.stub(utils, 'getBottomToolbarY').withArgs(browser).returns(0);
             sinon.stub(utils, 'getWebViewSize').withArgs(browser).returns({height: 0, width: 0});
@@ -168,7 +169,7 @@ describe('common "element-utils" helper', () => {
             it('should calc with multiply body width by pixel ratio', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({width: 200});
 
-                const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 100, pixelRatio: 2});
+                const {width} = await utils.calcWebViewCoordsNative(browser, {bodyWidth: 100, pixelRatio: 2});
 
                 assert.equal(width, 200);
             });
@@ -176,7 +177,7 @@ describe('common "element-utils" helper', () => {
             it('should calc with multiplye web view width by pixel ratio', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({width: 100});
 
-                const {width} = await utils.calcWebViewCoords(browser, {bodyWidth: 200, pixelRatio: 2});
+                const {width} = await utils.calcWebViewCoordsNative(browser, {bodyWidth: 200, pixelRatio: 2});
 
                 assert.equal(width, 200);
             });
@@ -187,7 +188,7 @@ describe('common "element-utils" helper', () => {
                 utils.getBottomToolbarY.withArgs(browser).returns(10);
                 utils.getWebViewSize.withArgs(browser).returns({height: 12});
 
-                const {height} = await utils.calcWebViewCoords(browser, {pixelRatio: 1});
+                const {height} = await utils.calcWebViewCoordsNative(browser, {pixelRatio: 1});
 
                 assert.equal(height, 10);
             });
@@ -196,7 +197,7 @@ describe('common "element-utils" helper', () => {
                 utils.getTopToolbarHeight.withArgs(browser).returns(2);
                 utils.getWebViewSize.withArgs(browser).returns({height: 12});
 
-                const {height} = await utils.calcWebViewCoords(browser, {pixelRatio: 1});
+                const {height} = await utils.calcWebViewCoordsNative(browser, {pixelRatio: 1});
 
                 assert.equal(height, 10);
             });
@@ -204,7 +205,7 @@ describe('common "element-utils" helper', () => {
             it('with multiply web view height by passed pixel ration', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({height: 5});
 
-                const {height} = await utils.calcWebViewCoords(browser, {pixelRatio: 2});
+                const {height} = await utils.calcWebViewCoordsNative(browser, {pixelRatio: 2});
 
                 assert.equal(height, 10);
             });
@@ -215,7 +216,7 @@ describe('common "element-utils" helper', () => {
                 it('with substract passed body width from web view width and take half of it', async () => {
                     utils.getWebViewSize.withArgs(browser).returns({width: 20});
 
-                    const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10});
+                    const {left} = await utils.calcWebViewCoordsNative(browser, {bodyWidth: 10});
 
                     assert.equal(left, 5);
                 });
@@ -223,7 +224,7 @@ describe('common "element-utils" helper', () => {
                 it('with multiply real web view width by passed pixel ratio', async () => {
                     utils.getWebViewSize.withArgs(browser).returns({width: 20});
 
-                    const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 10, pixelRatio: 2});
+                    const {left} = await utils.calcWebViewCoordsNative(browser, {bodyWidth: 10, pixelRatio: 2});
 
                     assert.equal(left, 10);
                 });
@@ -232,7 +233,7 @@ describe('common "element-utils" helper', () => {
             it('should set to zero if calculated coord is negative', async () => {
                 utils.getWebViewSize.withArgs(browser).returns({width: 10});
 
-                const {left} = await utils.calcWebViewCoords(browser, {bodyWidth: 20});
+                const {left} = await utils.calcWebViewCoordsNative(browser, {bodyWidth: 20});
 
                 assert.equal(left, 0);
             });
@@ -242,7 +243,7 @@ describe('common "element-utils" helper', () => {
             it('should correctly calc with multiply top toolbar height by passed pixel ratio', async () => {
                 utils.getTopToolbarHeight.withArgs(browser).returns(2);
 
-                const {top} = await utils.calcWebViewCoords(browser, {pixelRatio: 2});
+                const {top} = await utils.calcWebViewCoordsNative(browser, {pixelRatio: 2});
 
                 assert.equal(top, 4);
             });
@@ -250,16 +251,43 @@ describe('common "element-utils" helper', () => {
             it('should set to zero if calculated coord is negative', async () => {
                 utils.getTopToolbarHeight.withArgs(browser).returns(-10);
 
-                const {top} = await utils.calcWebViewCoords(browser, {pixelRatio: 1});
+                const {top} = await utils.calcWebViewCoordsNative(browser, {pixelRatio: 1});
 
                 assert.equal(top, 0);
             });
         });
 
         it('should return "width", "height", "left" and "top" coords', async () => {
-            const coords = await utils.calcWebViewCoords(browser);
+            const coords = await utils.calcWebViewCoordsNative(browser);
 
             assert.hasAllKeys(coords, ['width', 'height', 'left', 'top']);
+        });
+    });
+
+    describe('"calcWebViewCoordsNative" method', () => {
+        it('should use _nativeElementsSize if exists', async () => {
+            utils = mkUtilsStub(getNativeLocators(browser), {
+                topToolbar: {height: 30, width: 300},
+                bottomToolbar: {height: 100, width: 300},
+                webview: {height: 600, width: 300}
+            });
+
+            const coords = await utils.calcWebViewCoords(browser, {pixelRatio: 1, bodyWidth: 290});
+
+            assert.deepEqual(coords, {width: 290, height: 470, left: 5, top: 30});
+        });
+
+        it('should use _nativeElementsSize if exists with landscape orientation', async () => {
+            browser.getOrientation.resolves('LANDSCAPE');
+            utils = mkUtilsStub(getNativeLocators(browser), {
+                topToolbar: {height: 30, width: 300},
+                bottomToolbar: {height: 100, width: 300},
+                webview: {height: 600, width: 300}
+            });
+
+            const coords = await utils.calcWebViewCoords(browser, {pixelRatio: 1, bodyWidth: 290});
+
+            assert.deepEqual(coords, {width: 290, height: 300, left: 155, top: 0});
         });
     });
 });
