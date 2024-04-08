@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v1.0.0...v2.1.0) (2024-04-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* node versions less than 16.0.0 are no longer supported
+
+### Features
+
+* add nativeElementsSize options ([56a7091](https://github.com/gemini-testing/hermione-safari-commands/commit/56a709156eff4ba761793feaefc154cb6f2aeba7))
+* drop node versions less than 16 ([aa087c9](https://github.com/gemini-testing/hermione-safari-commands/commit/aa087c9e24bf809fd94ebda98d86ed82bade25de))
+
 ## [2.0.0](https://github.com/gemini-testing/hermione-safari-commands/compare/v1.0.0...v2.0.0) (2023-03-24)
 
 
