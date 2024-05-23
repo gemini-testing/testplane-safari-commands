@@ -3,7 +3,7 @@
 [![NPM version](https://img.shields.io/npm/v/@testplane/safari-commands.svg?style=flat)](https://www.npmjs.org/package/@testplane/safari-commands)
 [![Build Status](https://travis-ci.org/gemini-testing/testplane-safari-commands.svg?branch=master)](https://travis-ci.org/gemini-testing/testplane-safari-commands)
 
-Plugin for [Testplane](https://github.com/gemini-testing/testplane) which is intended to add/wrap browser commands in order to work properly with the iOS safari browser.
+Plugin for [Testplane](https://github.com/gemini-testing/testplane) which is intended to add/wrap browser commands in order to work properly with the iOS safari browser. Currently, versions 13 to 16 are supported.
 
 You can read more about Testplane plugins [here](https://github.com/gemini-testing/testplane#plugins).
 
@@ -89,6 +89,8 @@ Wrappers over existing commands:
 * **swipe** - replaces wdio "swipe" in order to perform swipe by coordinates in native context;
 * **touch** - replaces wdio "touch" in order to perform touch click by coordinates in native context;
 * **dragAndDrop** - replaces wdio "dragAndDrop" in order to perform drag and drop elements by coordinates in native context.
+
+> ⚠️ For safari16 you need to use only `screenshot` wrapper.
 
 Commands to work with native elements:
 * **deviceClickBack** - command to click back button on device, which closes the current tab and returns to the previous one.
